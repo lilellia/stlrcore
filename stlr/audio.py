@@ -5,8 +5,8 @@ import vosk  # type: ignore
 import wave
 
 
-def disable_vosk_logging() -> None:
-    vosk.SetLogLevel(-1)  # type: ignore
+# Disable vosk's logging
+vosk.SetLogLevel(-1)  # type: ignore
 
 
 def convert_to_wav(audio_file: Path) -> Path:
