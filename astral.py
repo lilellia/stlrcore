@@ -52,6 +52,7 @@ class AstralApp(ttkb.Window):
             closed_image=Path(self.closed_mouth_box.text)
         )
 
+        self.export()
         self.update()
 
     def _update_annotations(self) -> None:
@@ -60,6 +61,14 @@ class AstralApp(ttkb.Window):
             open_image=Path(self.open_mouth_box.text),
             closed_image=Path(self.closed_mouth_box.text)
         )
+
+        self.export()
+        self.update()
+
+    def export(self) -> None:
+        """Export the ATL to file."""
+        with open(f"ATL-image-{self.image_name_box.text}.txt", "w") as f:
+            f.write(self.atl_box.text)
 
 
 def word_boundaries_in_range(transcription: Transcription, range_start: float, range_end: float) -> str:
@@ -101,7 +110,7 @@ def alternate_frames_for_duration(
 def alternate_frames(transcription: Transcription, atl_name: str, open_image: Path, closed_image: Path, time_step: float = 0.2) -> str:
     lines: list[str] = [
         f"# Transcription: {transcription}",
-        f"# length: {transcription.duration:.2f} s"
+        f"# length: {transcription.duration:.2f} s",
         f"image {atl_name}:"
     ]
 
