@@ -25,13 +25,18 @@ class TranscribedWord:
 
 
 class Transcription:
-    def __init__(self, words: Iterable[TranscribedWord]):
+    def __init__(self, words: Iterable[TranscribedWord], *, confident: bool = True):
         self._transcription = tuple(words)
+        self._confident = confident
 
     @property
     def duration(self) -> float:
         """Return the length of time (in seconds) that the transcription lasts."""
         return self._transcription[-1].end
+
+    @property
+    def confident(self) -> bool:
+        return self._confident
 
     def __iter__(self) -> Iterator[TranscribedWord]:
         return iter(self._transcription)
@@ -93,8 +98,8 @@ def transcribe(audio_file: Path, language: str = "en-us") -> Transcription:
     if len(timed) != len(untimed):
         logger.warning(f"   vosk: [{len(timed)}] {' '.join(s.word for s in timed)}")
         logger.warning(f"whisper: [{len(untimed)}] {' '.join(untimed)}")
-        logger.error(f"cannot transcribe file {audio_file}: transcriptions do not match")
-        return Transcription([])
+
+        return Transcription(timed, confident=False)
 
     # If they have the same length, assume that the untimed (whisper) transcription is correct.
     return Transcription(TranscribedWord(w, v.start, v.end) for v, w in zip(timed, untimed))

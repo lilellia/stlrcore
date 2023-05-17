@@ -23,6 +23,20 @@ class CEntry(ttkb.Entry):
         self._var.set(text)
 
 
+class CSwitch(ttkb.Checkbutton):
+    def __init__(self, master: Any, *args: Any, **kwargs: Any) -> None:
+        self._var = tk.IntVar(master)
+        super().__init__(master, *args, variable=self._var, **kwargs)
+
+    @property
+    def checked(self) -> bool:
+        return bool(self._var.get())
+
+    @checked.setter
+    def checked(self, value: bool) -> None:
+        self._var.set(int(value))
+
+
 class CText(ttkb.ScrolledText):
     @property
     def text(self) -> str:
