@@ -1,7 +1,7 @@
 from itertools import chain
 from pathlib import Path
 import tkinter as tk
-from tkinter.filedialog import askopenfilenames
+from tkinter.filedialog import askopenfilename, askopenfilenames
 import ttkbootstrap as ttkb  # type: ignore
 from typing import Any
 
@@ -21,6 +21,35 @@ class CEntry(ttkb.Entry):
     @text.setter
     def text(self, text: str) -> None:
         self._var.set(text)
+
+
+class CText(ttkb.ScrolledText):
+    @property
+    def text(self) -> str:
+        return self.get("1.0", "end-1c")
+
+    @text.setter
+    def text(self, text: str) -> None:
+        self.delete("1.0", "end")
+        self.insert("1.0", text)
+
+
+def file_selection_row(master: Any, row: int, label_text: str, button_text: str = "Select File", grid_kw: dict[str, Any] | None = None) -> tuple[CEntry, ttkb.Button]:
+    def _select_file() -> None:
+        entry.text = askopenfilename()
+
+    if grid_kw is None:
+        grid_kw = dict()
+
+    ttkb.Label(master, text=label_text).grid(row=row, column=0, **grid_kw)
+
+    entry = CEntry(master, width=80)
+    entry.grid(row=row, column=1, **grid_kw)
+
+    button = ttkb.Button(master, text=button_text, command=_select_file)
+    button.grid(row=row, column=2, **grid_kw)
+
+    return entry, button
 
 
 class App(ttkb.Window):
@@ -56,8 +85,8 @@ class App(ttkb.Window):
             f.grid(row=i, column=1, columnspan=2, sticky="nsew", padx=10, pady=10)
             self.transcriptions.append(f)
 
-        self.transcribe_btn = ttkb.Button(self, text="Transcribe", command=self.transcribe, bootstyle="info")
-        self.transcribe_btn.grid(row=i+1, column=0, columnspan=3, sticky="nsew", padx=10, pady=10)
+        self.transcribe_btn = ttkb.Button(self, text="Transcribe", command=self.transcribe, bootstyle="info")  # type: ignore
+        self.transcribe_btn.grid(row=i+1, column=0, columnspan=3, sticky="nsew", padx=10, pady=10)  # type: ignore
 
     def transcribe(self) -> None:
         for path, entry in zip(self.filenames, self.transcriptions):
