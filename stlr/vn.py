@@ -1,9 +1,8 @@
 from itertools import cycle
 from pathlib import Path
-import re
 
 from stlr.transcribe import Transcription
-from stlr.utils import frange
+from stlr.utils import frange, get_space_prefix, read_leading_float
 
 
 def wait_tag(seconds: float, *, precision: int = 2) -> str:
@@ -39,13 +38,7 @@ class ATLImageGenerator:
     @property
     def duration(self) -> float:
         """Determine the length (in seconds) of the animation."""
-        result = 0.0
-
-        for line in self.atl.splitlines():
-            if match := re.match(r"\s*([0-9]*\.?[0-9]+)", line):
-                result += float(match.group(1))
-
-        return result
+        return sum(read_leading_float(line) or 0.0 for line in self.atl.splitlines())
 
     def annotate(self, start: float, end: float, *, verbose: bool = True) -> str:
         boundaries = sorted([(t.word, t.end, "end") for t in self.transcription if start <= t.end < end], key=lambda item: item[1])
@@ -101,3 +94,34 @@ class ATLImageGenerator:
 
         self._atl = "\n".join(lines)
         return self._atl
+
+    def reannotate(self, atl: str, *, verbose: bool = True) -> str:
+        lines: list[str] = []
+
+        time = 0.0
+        for line in atl.splitlines():
+            if (pause := read_leading_float(line)) is None:
+                # this line doesn't have a delay, so add it unchanged
+                lines.append(line)
+                continue
+
+            prefix = get_space_prefix(line)
+            annotation = self.annotate(time, time + pause, verbose=verbose)
+            lines.append(f"{prefix}{pause:.2f}{annotation}")
+
+            time += pause
+
+            if time >= self.transcription.duration:
+                # we've reached the end of the line, so we can cut the animation here
+                break
+        else:
+            # we're exhausted the existing animation,
+            # so check if we need to add additional frames
+            if time < self.transcription.duration:
+                buffer = self.transcription.duration - time
+                added_lines, _ = self.alternate_frames_for_duration_ge(
+                    duration=buffer, start=time, ensure_close=True, verbose=verbose
+                )
+                lines.extend(added_lines)
+
+        return "\n".join(lines)

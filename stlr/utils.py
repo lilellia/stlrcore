@@ -33,3 +33,17 @@ def truncate_path(path: Path, highest_parent: str) -> Path:
         return Path(match.group(1))
 
     raise ValueError(f"cannot truncate {path} to {highest_parent}")
+
+
+def read_leading_float(s: str, /) -> float | None:
+    if match := re.match(r"\s*([0-9]*\.?[0-9]+)", s):
+        return float(match.group(1))
+
+    return None
+
+
+def get_space_prefix(s: str, /) -> str:
+    if match := re.match(r"(\s*)", s):
+        return match.group(1)
+
+    raise ValueError(f"cannot read space prefix for {s!r}")
