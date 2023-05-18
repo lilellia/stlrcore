@@ -179,6 +179,8 @@ class AstralApp(ttkb.Window):
         if not self.full_image_path.checked:
             closed_image = truncate_path(closed_image, "images")
 
+        self.atl_box.text = self.generator.reannotate(atl=self.atl_box.text, verbose=self.annotation_type.checked)
+
         self.export()
         self.update()
 

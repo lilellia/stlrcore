@@ -1,5 +1,5 @@
-from stlr.ui import App
+from stlr.ui import STLRApp
 
 
 if __name__ == "__main__":
-    App("stlr", themename="darkly").mainloop()
+    STLRApp("stlr", themename="darkly").mainloop()
