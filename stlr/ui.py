@@ -6,7 +6,8 @@ import ttkbootstrap as ttkb  # type: ignore
 from typing import Any
 
 from stlr.transcribe import transcribe
-from stlr.vn import renpyify
+from stlr.utils import truncate_path
+from stlr.vn import ATLImageGenerator, renpyify
 
 
 class CEntry(ttkb.Entry):
@@ -66,7 +67,7 @@ def file_selection_row(master: Any, row: int, label_text: str, button_text: str 
     return entry, button
 
 
-class App(ttkb.Window):
+class STLRApp(ttkb.Window):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)  # type: ignore
         self.init_components()
@@ -105,3 +106,83 @@ class App(ttkb.Window):
     def transcribe(self) -> None:
         for path, entry in zip(self.filenames, self.transcriptions):
             entry.text = renpyify(transcribe(path))
+
+
+class AstralApp(ttkb.Window):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)  # type: ignore
+        self.init_components()
+
+    def init_components(self) -> None:
+        grid_kw = dict(sticky="nsew", padx=10, pady=10)
+
+        # ATL image name
+        ttkb.Label(self, text="ATL image name").grid(row=0, column=0, **grid_kw)
+        self.image_name_box = CEntry(self)
+        self.image_name_box.grid(row=0, column=1, **grid_kw)
+
+        self.audio_file_box, self.audio_file_button = file_selection_row(self, row=1, label_text="Audio file", grid_kw=grid_kw)
+        self.open_mouth_box, self.open_mouth_button = file_selection_row(self, row=2, label_text="Open mouth image", grid_kw=grid_kw)
+        self.closed_mouth_box, self.closed_mouth_button = file_selection_row(self, row=3, label_text="Closed mouth image", grid_kw=grid_kw)
+
+        self.annotation_type = CSwitch(self, text="Detailed Annotations", bootstyle="info.RoundToggle.Toolbutton")
+        self.annotation_type.grid(row=4, column=2, **grid_kw)
+
+        self.full_image_path = CSwitch(self, text="Full Image Path", bootstyle="info.RoundToggle.Toolbutton")
+        self.full_image_path.grid(row=5, column=2, **grid_kw)
+
+        self.run_button = ttkb.Button(self, text="Generate ATL image code", command=self._generate_ATL)
+        self.run_button.grid(row=6, column=0, columnspan=3, **grid_kw)
+
+        self.atl_box = CText(self)
+        self.atl_box.grid(row=7, column=0, columnspan=3, **grid_kw)
+
+        self.update_annotations_button = ttkb.Button(
+            self, text="Update Annotations", command=self._update_annotations,
+            # make the button appear purple with cyborg theming
+            bootstyle="info"  # type: ignore
+        )
+        self.update_annotations_button.grid(row=8, column=0, columnspan=3, **grid_kw)
+
+    def _generate_ATL(self) -> None:
+        self.atl_box.text = "Generating⋯"
+        self.update()
+
+        self.transcription = transcribe(Path(self.audio_file_box.text))
+
+        open_image = Path(self.open_mouth_box.text)
+        if not self.full_image_path.checked:
+            open_image = truncate_path(open_image, "images")
+
+        closed_image = Path(self.closed_mouth_box.text)
+        if not self.full_image_path.checked:
+            closed_image = truncate_path(closed_image, "images")
+
+        self.generator = ATLImageGenerator(
+            self.image_name_box.text,
+            self.transcription,
+            open_image,
+            closed_image
+        )
+
+        self.atl_box.text = self.generator.generate_atl(verbose=self.annotation_type.checked)
+
+        self.export()
+        self.update()
+
+    def _update_annotations(self) -> None:
+        open_image = Path(self.open_mouth_box.text)
+        if not self.full_image_path.checked:
+            open_image = truncate_path(open_image, "images")
+
+        closed_image = Path(self.closed_mouth_box.text)
+        if not self.full_image_path.checked:
+            closed_image = truncate_path(closed_image, "images")
+
+        self.export()
+        self.update()
+
+    def export(self) -> None:
+        """Export the ATL to file."""
+        with open(f"ATL-image-{self.image_name_box.text}.txt", "w") as f:
+            f.write(self.atl_box.text)
