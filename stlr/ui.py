@@ -126,23 +126,26 @@ class AstralApp(ttkb.Window):
         self.closed_mouth_box, self.closed_mouth_button = file_selection_row(self, row=3, label_text="Closed mouth image", grid_kw=grid_kw)
 
         self.annotation_type = CSwitch(self, text="Detailed Annotations", bootstyle="info.RoundToggle.Toolbutton")
-        self.annotation_type.grid(row=4, column=2, **grid_kw)
+        self.annotation_type.grid(row=1, column=3, **grid_kw)
 
         self.full_image_path = CSwitch(self, text="Full Image Path", bootstyle="info.RoundToggle.Toolbutton")
-        self.full_image_path.grid(row=5, column=2, **grid_kw)
+        self.full_image_path.grid(row=2, column=3, **grid_kw)
+
+        self.let_astral_try = CSwitch(self, text="let astral-chan try ♥", bootstyle="info.RoundToggle.Toolbutton")
+        self.let_astral_try.grid(row=3, column=3, **grid_kw)
 
         self.run_button = ttkb.Button(self, text="Generate ATL image code", command=self._generate_ATL)
-        self.run_button.grid(row=6, column=0, columnspan=3, **grid_kw)
+        self.run_button.grid(row=7, column=0, columnspan=4, **grid_kw)
 
         self.atl_box = CText(self)
-        self.atl_box.grid(row=7, column=0, columnspan=3, **grid_kw)
+        self.atl_box.grid(row=8, column=0, columnspan=4, **grid_kw)
 
         self.update_annotations_button = ttkb.Button(
             self, text="Update Annotations", command=self._update_annotations,
             # make the button appear purple with cyborg theming
             bootstyle="info"  # type: ignore
         )
-        self.update_annotations_button.grid(row=8, column=0, columnspan=3, **grid_kw)
+        self.update_annotations_button.grid(row=9, column=0, columnspan=4, **grid_kw)
 
     def _generate_ATL(self) -> None:
         self.atl_box.text = "Generating⋯"
@@ -165,7 +168,12 @@ class AstralApp(ttkb.Window):
             closed_image
         )
 
-        self.atl_box.text = self.generator.generate_atl(verbose=self.annotation_type.checked)
+        if self.let_astral_try.checked:
+            # actually look at the transcription and try to line things up
+            self.atl_box.text = self.generator.generate_smart_atl(verbose=self.annotation_type.checked)
+        else:
+            # just do a naive 0.2 second alternating toggle
+            self.atl_box.text = self.generator.generate_atl(verbose=self.annotation_type.checked)
 
         self.export()
         self.update()

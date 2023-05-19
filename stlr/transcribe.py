@@ -30,6 +30,11 @@ class Transcription:
         self._confident = confident
 
     @property
+    def start(self) -> float:
+        """Return the time (in seconds) that the first word begins."""
+        return self._transcription[0].start
+
+    @property
     def duration(self) -> float:
         """Return the length of time (in seconds) that the transcription lasts."""
         return self._transcription[-1].end
@@ -47,8 +52,9 @@ class Transcription:
     def __str__(self) -> str:
         return " ".join(t.word for t in self)
 
+    @property
     def waits(self) -> list[float]:
-        """Determine the lengths of pauses between words."""
+        """Determine the lengths of pauses after each word."""
         if len(self) < 2:
             return []
 
@@ -58,7 +64,7 @@ class Transcription:
             assert b is not None
             waits.append(b.start - a.end)
 
-        return waits
+        return waits + [0]  # no wait after last word
 
 
 def _transcribe_partial(result: Any) -> list[TranscribedWord]:
