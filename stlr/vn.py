@@ -113,6 +113,7 @@ class ATLImageGenerator:
             f"image {self.image_name}:",
             f"    # {'' if self.transcription.confident else '(!)'} Transcription: {self.transcription}",
             f"    # length: {self.transcription.duration:.2f} seconds",
+            f"    {self.closed_mouth.as_posix()}",
             f"    {self.transcription.start}"
         ]
 
