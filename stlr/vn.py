@@ -67,14 +67,14 @@ class ATLImageGenerator:
         image: Path | None = None
 
         for time, image in zip(frange(start, start+duration, time_step), self._images):
-            lines.append(f"    \"{image}\"")
+            lines.append(f"    \"{image.as_posix()}\"")
 
             annotation = self.annotate(time, time + time_step, verbose=verbose)
             delay_line = f"    {time_step:.3f}{annotation}"
             lines.append(delay_line)
 
         if ensure_close and image != self.closed_mouth:
-            lines.append(f"    \"{next(self._images)}\"")
+            lines.append(f"    \"{next(self._images).as_posix()}\"")
 
         return lines, image
 
