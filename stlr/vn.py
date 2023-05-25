@@ -41,7 +41,7 @@ class ATLImageGenerator:
         return sum(read_leading_float(line) or 0.0 for line in self.atl.splitlines())
 
     def annotate(self, start: float, end: float, *, verbose: bool = True) -> str:
-        boundaries = sorted([(t.word, t.end, "end") for t in self.transcription if start <= t.end <= end], key=lambda item: item[1])
+        boundaries = sorted([(t.word, t.end, "end") for t in self.transcription if start < t.end <= end], key=lambda item: item[1])
 
         if not verbose:
             # just get word endings
@@ -49,7 +49,7 @@ class ATLImageGenerator:
             return f"  # {a}" if boundaries else ""
 
         # otherwise, we need the detailed annotation, so...
-        boundaries += [(t.word, t.start, "start") for t in self.transcription if start <= t.start <= end]
+        boundaries += [(t.word, t.start, "start") for t in self.transcription if start <= t.start < end]
         boundaries.sort(key=lambda item: item[1])
 
         annotation = f"  # animation time: {start:.3f} → {end:.3f} "
