@@ -1,62 +1,37 @@
-# STLR
+# stlr
+
+## Overview
+
+`stlr` is a toolkit designed to assist in the development of voice-acted visual novels. It comes with three primary components:
+
+### ※ stlr.py
+`stlr.py` can transcribe the audio of a line and output a Ren'Py say statement with the pauses between words notated in an effort to have the text scroll alongside the audio.
+
+Choose a number of files, and stlr will populate its UI with textboxes for each line. After pressing "Transcribe", the boxes will fill with timing-adjusted say statements, example:
+
+```Actually,{w=0.39} this{w=0.06} is{w=0.06} fine.{w=0.63} Clearly my noble wants to play{w=0.36} hide{w=0.51} and{w=0.09} seek.{w=1.26} Well,{w=0.36} I{w=0.06} wonder what'll happen{w=0.3} if{w=0.03} I{w=0.27} find you.```
+
+**NOTE:** `astral` is the better developed of the two main components. This project was developed in collaboration with a particular VN developer, and she decided to scrap the text-scrolling aspect of her game and focus more on the animations. As such, `stlr` saw an indefinite pause in development.
+
+### ※ astral.py
+
+`astral.py` is designed to assist with animations. She can determine the timing of words spoken in an audio file, then generate Ren'Py ATL to alternate between a closed-mouth and open-mouth image so that these line up with the beginnings and ends of words.
+
+Select an audio file, as well as the two image files, then press "Generate ATL". The toggles on the right side of the UI are as follows:
+
+- *Detailed Annotations* — show the exact timing of every line, as well as the start and end of every word with boundaries given. This can be useful for debugging, but can also be cluttered.
+- *Full Image Paths* — when checked, enter the image filenames into the ATL exactly as they appear in the textboxes. When unchecked, trim to `images/...`.
+- *let astral-chan try ♥* — when checked, use astral's "smart" ATL generation to make sure the animations line up as best as she can. when unchecked, simply alternate open/closed images every 0.2 seconds for the entire duration of the audio
+
+
+### ※ impatient.py
+`impatient.py` is designed to remove all Ren'Py `{w=...}` wait tags from a script.
+
 
 ## Installation
 
-1. Verify that Python is installed. In the terminal/command prompt:
+After cloning this repository, simply run
 
-```bash
-python3 --version
-```
-
-should output something like "Python 3.11.2". If not, also try `python --version`, or `py --version`. Take note of which command works (for argument, we will assume `python3`).
-
-2. Install necessary dependencies.
-
-```bash
+```sh
 python3 -m pip install -r requirements.txt
 ```
-
-## Usage
-
-1. Construct a file with the necessary commands. This file should contain lines in the following pattern
-
-```text
-VA line audio filename
-correct transcription
-
-VA line audio filename
-correct transcription
-
-VA line audio filename
-correct transcription
-```
-
-For example (suppose this file is `commands.txt`):
-
-```text
-05.mp3
-Actually, this is fine. Clearly my noble wants to play Hide and Seek. Well, I wonder what'll happen if I find you.
-```
-
-2. Run STLR against the file you just created.
-
-```bash
-python3 stlr.py commands.txt
-```
-
-Your output should be something like (except likely colored):
-
-```text
-2023-04-30 16:21:11.022 | INFO     | __main__:process_audio:104 - loading audio (05.mp3)...
-2023-04-30 16:21:11.023 | WARNING  | __main__:load_audio:75 - audio must be WAV format mono PCM. converting...
-2023-04-30 16:21:11.356 | INFO     | __main__:process_audio:108 - processing...
-2023-04-30 16:21:12.926 | SUCCESS  | __main__:handle_one:125 - 
-Actually,{w=0.39} this{w=0.06} is{w=0.06} fine.{w=0.63} Clearly my noble wants to play{w=0.36} Hide{w=0.51} and{w=0.09} Seek.{w=1.26} Well,{w=0.36} I{w=0.06} wonder what'll happen{w=0.3} if{w=0.03} I{w=0.27} find you.
-```
-
-This final line,
-```text
-Actually,{w=0.39} this{w=0.06} is{w=0.06} fine.{w=0.63} Clearly my noble wants to play{w=0.36} Hide{w=0.51} and{w=0.09} Seek.{w=1.26} Well,{w=0.36} I{w=0.06} wonder what'll happen{w=0.3} if{w=0.03} I{w=0.27} find you.
-```
-
-is the wait-adjusted Ren'Py "say" statement that corresponds with that audio file. If you provided multiple commands, each command will correspond to an output block of this format.
