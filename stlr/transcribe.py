@@ -3,6 +3,7 @@ import json
 from loguru import logger
 from more_itertools import windowed
 from pathlib import Path
+from tabulate import tabulate
 from typing import Any, Iterable, Iterator
 import whisper  # type: ignore
 
@@ -65,6 +66,15 @@ class Transcription:
             waits.append(b.start - a.end)
 
         return waits + [0]  # no wait after last word
+
+    def tabulate(self, *, tablefmt: str = "rounded_grid") -> str:
+        """Return a prettified, tabular representation."""
+        data = [
+            [t.word, t.start, t.end, t.duration]
+            for t in self
+        ]
+
+        return tabulate(data, headers=["Word", "Start", "End", "Duration"], tablefmt=tablefmt)
 
 
 def _transcribe_partial(result: Any) -> list[TranscribedWord]:

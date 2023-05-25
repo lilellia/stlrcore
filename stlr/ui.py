@@ -147,6 +147,12 @@ class AstralApp(ttkb.Window):
         )
         self.update_annotations_button.grid(row=9, column=0, columnspan=4, **grid_kw)
 
+        self.debug_button = ttkb.Button(
+            self, text="Show Debug", command=self._show_debug,
+            # make the button grey with cyborg (and most others) theming
+            bootstyle="secondary")  # type: ignore
+        self.debug_button.grid(row=10, column=0, columnspan=4, **grid_kw)
+
     def _generate_ATL(self) -> None:
         self.atl_box.text = "Generating⋯"
         self.update()
@@ -191,6 +197,18 @@ class AstralApp(ttkb.Window):
 
         self.export()
         self.update()
+
+    def _show_debug(self) -> None:
+        grid_kw = dict(sticky="nsew", padx=10, pady=10)
+
+        popup = ttkb.Toplevel("astral (debug)")
+
+        ttkb.Label(popup, text="Transcription:").grid(row=0, column=0, **grid_kw)
+        textbox = CText(popup, font="TkFixedFont")
+        textbox.text = self.transcription.tabulate()
+        textbox.grid(row=1, column=0, **grid_kw)
+
+        popup.mainloop()
 
     def export(self) -> None:
         """Export the ATL to file."""
