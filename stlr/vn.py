@@ -100,7 +100,7 @@ class ATLImageGenerator:
 
         # The actual length (in seconds) of each frame.
         #                               ↓ the "actual" number of frames, as close to target number
-        frame_length = word.duration / round(word.duration / target_frame_time)
+        frame_length = word.duration / max(round(word.duration / target_frame_time), 1)
         lines, _ = self.alternate_frames_for_duration(
             duration=word.duration, start=word.start, time_step=frame_length,
             ensure_close=True, verbose=verbose
