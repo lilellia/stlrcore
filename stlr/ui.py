@@ -137,7 +137,7 @@ class AstralApp(ttkb.Window):
         self.run_button = ttkb.Button(self, text="Generate ATL image code", command=self._generate_ATL)
         self.run_button.grid(row=7, column=0, columnspan=4, **grid_kw)
 
-        self.atl_box = CText(self)
+        self.atl_box = CText(self, font="TkFixedFont")
         self.atl_box.grid(row=8, column=0, columnspan=4, **grid_kw)
 
         self.update_annotations_button = ttkb.Button(

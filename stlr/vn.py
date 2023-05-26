@@ -41,12 +41,10 @@ class ATLImageGenerator:
         return sum(read_leading_float(line) or 0.0 for line in self.atl.splitlines())
 
     def annotate(self, start: float, end: float, *, verbose: bool = True) -> str:
-        boundaries = sorted([(t.word, t.end, "end") for t in self.transcription if start < t.end <= end], key=lambda item: item[1])
-
         if not verbose:
-            # just get word endings
-            a = ', '.join(word for word, _, _ in boundaries)
-            return f"  # {a}" if boundaries else ""
+            return ""
+
+        boundaries = sorted([(t.word, t.end, "end") for t in self.transcription if start < t.end <= end], key=lambda item: item[1])
 
         # otherwise, we need the detailed annotation, so...
         boundaries += [(t.word, t.start, "start") for t in self.transcription if start <= t.start < end]
@@ -96,17 +94,20 @@ class ATLImageGenerator:
         return self._atl
 
     def _generate_smart_block(self, word: TranscribedWord, target_frame_time: float = 0.2, *, verbose: bool = True) -> list[str]:
-        lines: list[str] = []
-
         # The actual length (in seconds) of each frame.
         #                               ↓ the "actual" number of frames, as close to target number
         frame_length = word.duration / max(round(word.duration / target_frame_time), 1)
+
         lines, _ = self.alternate_frames_for_duration(
             duration=word.duration, start=word.start, time_step=frame_length,
             ensure_close=True, verbose=verbose
         )
 
-        return lines
+        # add delineating comments
+        pre_block = f"    # ↓ --- {word.word} (duration: {word.duration:.2f}s) --- ↓"
+        post_block = f"    # ↑ --- {word.word} --- ↑"
+
+        return [pre_block, *lines, post_block]
 
     def generate_smart_atl(self, *, verbose: bool = True) -> str:
         lines = [
@@ -120,7 +121,7 @@ class ATLImageGenerator:
         for word, wait in zip(self.transcription, self.transcription.waits):
             lines.extend(self._generate_smart_block(word, verbose=verbose))
             if wait:
-                lines.append(f"    {wait:.3f}")
+                lines.extend(["", f"    {wait:.3f}  # (pause)", ""])
 
         return "\n".join(lines)
 
