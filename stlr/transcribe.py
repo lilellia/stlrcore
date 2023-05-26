@@ -14,6 +14,9 @@ from stlr.audio import load_audio, build_recognizer
 with open(Path(__file__).parent.parent / "config.toml") as f:
     config = toml.load(f)
 
+WHISPER_MODEL = config["transcription-models"]["whisper"]
+VOSK_MODEL = config["transcription-models"]["vosk"]
+
 
 @dataclass
 class TranscribedWord:
@@ -90,7 +93,7 @@ def _transcribe_partial(result: Any) -> list[TranscribedWord]:
     return [TranscribedWord(**w) for w in guess]
 
 
-def _transcribe_vosk(audio_file: Path, model: str = "vosk-model-en-us-0.22-lgraph") -> Transcription:
+def _transcribe_vosk(audio_file: Path, model: str = VOSK_MODEL) -> Transcription:
     """Transcribe an audio file in the given language while providing timing information."""
     audio = load_audio(audio_file)
     recognizer = build_recognizer(audio, model=model)
@@ -105,7 +108,7 @@ def _transcribe_vosk(audio_file: Path, model: str = "vosk-model-en-us-0.22-lgrap
     return Transcription(words + _transcribe_partial(recognizer.FinalResult()))
 
 
-def _transcribe_whisper(audio_file: Path, model: str = "base") -> list[str]:
+def _transcribe_whisper(audio_file: Path, model: str = WHISPER_MODEL) -> list[str]:
     """Accurately transcribe an audio file."""
     model = whisper.load_model(model)
     return model.transcribe(str(audio_file))["text"].split()  # type: ignore
@@ -113,8 +116,8 @@ def _transcribe_whisper(audio_file: Path, model: str = "base") -> list[str]:
 
 def transcribe(
         audio_file: Path,
-        whisper_model: str = config["transcription-models"]["whisper"],
-        vosk_model: str = config["transcription-models"]["vosk"]
+        whisper_model: str = WHISPER_MODEL,
+        vosk_model: str = VOSK_MODEL
 ) -> Transcription:
     """Transcribe an audio file in the given language."""
     timed = _transcribe_vosk(audio_file, model=vosk_model)

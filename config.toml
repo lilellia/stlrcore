@@ -9,5 +9,5 @@ whisper = "base"
 #   vosk-model-small-en-us-0.15           (40M)
 #   vosk-model-en-us-0.22                 (1.8G)
 #   vosk-model-en-us-0.22-lgraph          (128M)
-#   vosk-model-en-us-0.42-gigaspeed       (2.3G)
+#   vosk-model-en-us-0.42-gigaspeech       (2.3G)
 vosk = "vosk-model-small-en-us-0.15"
