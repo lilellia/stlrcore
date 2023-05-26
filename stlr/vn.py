@@ -40,14 +40,21 @@ class ATLImageGenerator:
         """Determine the length (in seconds) of the animation."""
         return sum(read_leading_float(line) or 0.0 for line in self.atl.splitlines())
 
-    def annotate(self, start: float, end: float, *, verbose: bool = True) -> str:
-        if not verbose:
+    def annotate(self, start: float, end: float, *, verbose: bool = True, assisted: bool = False) -> str:
+        if assisted and not verbose:
+            # we're in assisted mode but only want simple annotations
+            # so we only need the word headers/tails that are generated over there
             return ""
 
-        boundaries = sorted([(t.word, t.end, "end") for t in self.transcription if start < t.end <= end], key=lambda item: item[1])
+        boundaries = sorted([(t.word, t.start, "start") for t in self.transcription if start <= t.start < end], key=lambda item: item[1])
+
+        if not verbose:
+            # unassisted mode, so we don't have the headers/tails
+            annotation = " |".join(f"{word[0]}" for word in boundaries)
+            return f"  # {annotation}" if annotation else ""
 
         # otherwise, we need the detailed annotation, so...
-        boundaries += [(t.word, t.start, "start") for t in self.transcription if start <= t.start < end]
+        boundaries += [(t.word, t.end, "end") for t in self.transcription if start < t.end <= end]
         boundaries.sort(key=lambda item: item[1])
 
         annotation = f"  # animation time: {start:.3f} → {end:.3f} "
