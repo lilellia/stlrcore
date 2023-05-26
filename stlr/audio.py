@@ -39,8 +39,8 @@ def load_audio(audio_file: Path) -> wave.Wave_read:
         return load_wav(converted)
 
 
-def build_recognizer(audio: wave.Wave_read, language: str = "en-us") -> vosk.KaldiRecognizer:
-    model = vosk.Model(lang=language)
+def build_recognizer(audio: wave.Wave_read, model: str = "en-us-0.15") -> vosk.KaldiRecognizer:
+    model = vosk.Model(model_name=model)
     r = vosk.KaldiRecognizer(model, audio.getframerate())
     r.SetMaxAlternatives(10)  # type: ignore
     r.SetWords(True)  # type: ignore

@@ -4,10 +4,15 @@ from loguru import logger
 from more_itertools import windowed
 from pathlib import Path
 from tabulate import tabulate
+import toml
 from typing import Any, Iterable, Iterator
 import whisper  # type: ignore
 
 from stlr.audio import load_audio, build_recognizer
+
+
+with open(Path(__file__).parent.parent / "config.toml") as f:
+    config = toml.load(f)
 
 
 @dataclass
@@ -85,10 +90,10 @@ def _transcribe_partial(result: Any) -> list[TranscribedWord]:
     return [TranscribedWord(**w) for w in guess]
 
 
-def _transcribe_vosk(audio_file: Path, language: str = "en-us") -> Transcription:
+def _transcribe_vosk(audio_file: Path, model: str = "vosk-model-en-us-0.22-lgraph") -> Transcription:
     """Transcribe an audio file in the given language while providing timing information."""
     audio = load_audio(audio_file)
-    recognizer = build_recognizer(audio, language)
+    recognizer = build_recognizer(audio, model=model)
 
     words: list[TranscribedWord] = []
     while (data := audio.readframes(4000)):
@@ -100,16 +105,20 @@ def _transcribe_vosk(audio_file: Path, language: str = "en-us") -> Transcription
     return Transcription(words + _transcribe_partial(recognizer.FinalResult()))
 
 
-def _transcribe_whisper(audio_file: Path) -> list[str]:
+def _transcribe_whisper(audio_file: Path, model: str = "base") -> list[str]:
     """Accurately transcribe an audio file."""
-    model = whisper.load_model("base")
+    model = whisper.load_model(model)
     return model.transcribe(str(audio_file))["text"].split()  # type: ignore
 
 
-def transcribe(audio_file: Path, language: str = "en-us") -> Transcription:
+def transcribe(
+        audio_file: Path,
+        whisper_model: str = config["transcription-models"]["whisper"],
+        vosk_model: str = config["transcription-models"]["vosk"]
+) -> Transcription:
     """Transcribe an audio file in the given language."""
-    timed = _transcribe_vosk(audio_file, language)
-    untimed = _transcribe_whisper(audio_file)
+    timed = _transcribe_vosk(audio_file, model=vosk_model)
+    untimed = _transcribe_whisper(audio_file, model=whisper_model)
 
     if len(timed) != len(untimed):
         logger.warning(f"   vosk: [{len(timed)}] {' '.join(s.word for s in timed)}")

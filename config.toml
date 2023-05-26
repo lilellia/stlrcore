@@ -1,0 +1,13 @@
+[transcription-models]
+# should be one of:
+#   base, large, large-v1, large-v2,
+#   tiny, small, medium,
+#   tiny.en, small.en, medium.en
+whisper = "base"
+
+# should be one of (sizes given on right):
+#   vosk-model-small-en-us-0.15           (40M)
+#   vosk-model-en-us-0.22                 (1.8G)
+#   vosk-model-en-us-0.22-lgraph          (128M)
+#   vosk-model-en-us-0.42-gigaspeed       (2.3G)
+vosk = "vosk-model-small-en-us-0.15"
