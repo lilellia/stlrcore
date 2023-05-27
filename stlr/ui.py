@@ -122,9 +122,13 @@ class AstralApp(ttkb.Window):
         self.image_name_box = CEntry(self)
         self.image_name_box.grid(row=0, column=1, **grid_kw)
 
-        self.audio_file_box, self.audio_file_button = file_selection_row(self, row=1, label_text="Audio file", grid_kw=grid_kw)
+        self.audio_file_box, self.audio_file_button = file_selection_row(self, row=1, label_text="Data file", grid_kw=grid_kw)
         self.open_mouth_box, self.open_mouth_button = file_selection_row(self, row=2, label_text="Open mouth image", grid_kw=grid_kw)
         self.closed_mouth_box, self.closed_mouth_button = file_selection_row(self, row=3, label_text="Closed mouth image", grid_kw=grid_kw)
+
+        # json toggle
+        self.json_toggle = CSwitch(self, text="is JSON import?", bootstyle="info.RoundToggle")
+        self.json_toggle.grid(row=0, column=3, **grid_kw)
 
         self.annotation_type = CSwitch(self, text="Detailed Annotations", bootstyle="info.RoundToggle.Toolbutton")
         self.annotation_type.grid(row=1, column=3, **grid_kw)
@@ -158,7 +162,8 @@ class AstralApp(ttkb.Window):
         self.atl_box.text = "Generating⋯"
         self.update()
 
-        self.transcription = Transcription.from_audio(self.audio_file_box.text)
+        data_file = Path(self.audio_file_box.text)
+        self.transcription = Transcription.from_json(data_file) if self.json_toggle.checked else Transcription.from_audio(data_file)
 
         open_image = Path(self.open_mouth_box.text)
         if not self.full_image_path.checked:
