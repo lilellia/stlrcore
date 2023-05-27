@@ -1,9 +1,14 @@
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass
 from more_itertools import windowed
+import json
 from pathlib import Path
 from tabulate import tabulate
+<<<<<<< HEAD
 from typing import Iterable, Iterator
 import whisper_timestamped as whisper
+=======
+from typing import Any, Iterable, Iterator
+>>>>>>> 6e6f851 (provide ability to load/export transcription data in json format)
 
 from stlr.config import CONFIG
 
@@ -32,6 +37,17 @@ class Transcription:
         self.transcription = tuple(words)
         self.model = model
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]):
+        model = data.pop("model")
+        words = [TranscribedWord(**t) for t in data.pop("words")]
+        return cls(words=words, model=model)
+
+    @classmethod
+    def from_json(cls, filepath: Path):
+        data = json.loads(filepath.read_text())
+        return cls.from_dict(data)
+        
     
     @classmethod
     def from_audio(cls, audio_file: Path | str, model_name: str = WHISPER_MODEL):
@@ -97,3 +113,12 @@ class Transcription:
         ]
 
         return tabulate(data, headers=["Word", "Start", "End", "Duration", "Confidence"], tablefmt=tablefmt)
+
+    def export(self, filepath: Path) -> None:
+        """Export this transcription to file (.json)"""
+        data = {
+            "model": self.model,
+            "text": str(self),
+            "words": [asdict(word) for word in self]
+        }
+        filepath.write_text(json.dumps(data, indent=4))
