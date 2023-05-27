@@ -2,6 +2,12 @@ whisper_settings:
     language: en
 
     # should be one of:
+    #   openai-whisper
+    #   whisper-timestamped
+    #   stable-whisper
+    library: stable-whisper
+
+    # should be one of:
     #   null  (will use GPU if available)
     #   cpu
     device: null

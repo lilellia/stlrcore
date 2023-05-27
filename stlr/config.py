@@ -10,7 +10,8 @@ DEFAULT_CONFIG = Path(__file__).parent.parent / "config.yaml"
 @dataclass
 class WhisperModel:
     name: str
-    device: str | None
+    device: str | None = None
+    library: str = "openai-whisper"
 
 
 @dataclass
@@ -28,7 +29,7 @@ class UIThemes:
 class Config:
     model: WhisperModel
     whisper: dict[str, Any]
-    étoile_settings: ÉtoileSettings
+    étoile: ÉtoileSettings
     ui_themes: UIThemes
 
     @classmethod
@@ -37,7 +38,7 @@ class Config:
             data = yaml.safe_load(f)
 
         ws: dict[str, Any] = data["whisper_settings"]
-        model_config = WhisperModel(name=ws.pop("model"), device=ws.pop("device"))
+        model_config = WhisperModel(name=ws.pop("model"), device=ws.pop("device"), library=ws.pop("library"))
         return cls(model_config, ws, ÉtoileSettings(**data["étoile_settings"]), UIThemes(**data["ui_themes"]))
 
 

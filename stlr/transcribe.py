@@ -3,6 +3,7 @@ from dataclasses import asdict, dataclass
 from more_itertools import windowed
 import json
 from pathlib import Path
+from stable_whisper import WhisperResult
 from tabulate import tabulate
 from typing import Any, Iterable, Iterator, Literal
 
@@ -10,12 +11,10 @@ from stlr.config import CONFIG
 from stlr.models import ModelManager
 from stlr.utils import seconds_to_hms
 
-WHISPER_MODEL = CONFIG.model.name
-WHISPER_DEVICE = CONFIG.model.device
+MODEL_SETTINGS = CONFIG.model
 WHISPER_SETTINGS = CONFIG.whisper
 
-
-models = ModelManager()
+MODEL_MANAGER = ModelManager()
 
 
 @dataclass
@@ -91,18 +90,28 @@ class Transcription:
         return LOAD_MODES[mode](filepath)
 
     @classmethod
-    def from_audio(cls, audio_file: Path | str, model_name: str = WHISPER_MODEL, device: str | None = WHISPER_DEVICE):
+    def from_whisper_result(cls, result: WhisperResult, *, model: str | None = None):
+        try:
+            words = [
+                TranscribedWord(w.word, w.start, w.end, confidence=w.probability)
+                for segment in result.segments
+                for w in segment.words
+            ]
+        except TypeError:
+            # probably using OpenAIWhisper
+            words = []
+
+        return cls(
+            words=words,
+            model=model
+        )
+
+    @classmethod
+    def from_audio(cls, audio_file: Path | str, library: str = MODEL_SETTINGS.library, model_name: str = MODEL_SETTINGS.name, device: str | None = MODEL_SETTINGS.device):
         """Create a transcription from an audio file using whisper."""
-        model = models.load(model_name, device=device)
-        result = model.transcribe(str(audio_file), **WHISPER_SETTINGS)
-
-        words = [
-            TranscribedWord(text=word.word, start=word.start, end=word.end, confidence=word.probability)
-            for segment in result.segments
-            for word in segment.words
-        ]
-
-        return cls(words=words, model=model_name)
+        model = MODEL_MANAGER.get(library, model_name, device)
+        result = model.transcribe(audio_file)
+        return cls.from_whisper_result(result, model=model_name)
 
     @property
     def start(self) -> float:
