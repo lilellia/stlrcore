@@ -14,6 +14,11 @@ class WhisperModel:
 
 
 @dataclass
+class ÉtoileSettings:
+    export_format: str = "json"
+
+
+@dataclass
 class UIThemes:
     stlr: str
     astral: str
@@ -23,6 +28,7 @@ class UIThemes:
 class Config:
     model: WhisperModel
     whisper: dict[str, Any]
+    étoile_settings: ÉtoileSettings
     ui_themes: UIThemes
 
     @classmethod
@@ -32,7 +38,7 @@ class Config:
 
         ws: dict[str, Any] = data["whisper_settings"]
         model_config = WhisperModel(name=ws.pop("model"), device=ws.pop("device"))
-        return cls(model_config, ws, UIThemes(**data["ui_themes"]))
+        return cls(model_config, ws, ÉtoileSettings(**data["étoile_settings"]), UIThemes(**data["ui_themes"]))
 
 
 CONFIG = Config.load()
