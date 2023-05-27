@@ -43,7 +43,8 @@ class Transcription:
 
     @classmethod
     def from_json(cls, filepath: Path):
-        data = json.loads(filepath.read_text())
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
         return cls.from_dict(data)
 
     @classmethod
@@ -118,7 +119,8 @@ class Transcription:
             "text": str(self),
             "words": [asdict(word) for word in self]
         }
-        filepath.write_text(json.dumps(data, indent=4))
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(json.dumps(data, indent=4))
 
     def _export_tsv(self, filepath: Path) -> None:
         """Export this transcription to file (Audition cues, .tsv)"""
@@ -128,7 +130,7 @@ class Transcription:
             for i, word in enumerate(self, start=1)
         ]
 
-        with open(filepath, "w", newline="") as f:
+        with open(filepath, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f, dialect="excel-tab")
             writer.writerow(fields)
             writer.writerows(data)
