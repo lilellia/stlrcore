@@ -5,8 +5,8 @@ from tkinter.filedialog import askopenfilenames
 
 
 def remove_waits(file: Path):
-    out = re.sub(r"\{w=.+?\}", "", file.read_text())
-    file.write_text(out)
+    out = re.sub(r"\{w=.+?\}", "", file.read_text(encoding="utf-8"))
+    file.write_text(out, encoding="utf-8")
 
 
 def main():

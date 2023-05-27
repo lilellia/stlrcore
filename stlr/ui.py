@@ -218,5 +218,5 @@ class AstralApp(ttkb.Window):
 
     def export(self) -> None:
         """Export the ATL to file."""
-        with open(f"ATL-image-{self.image_name_box.text}.txt", "w") as f:
+        with open(f"ATL-image-{self.image_name_box.text}.txt", "w", encoding="utf-8") as f:
             f.write(self.atl_box.text)
