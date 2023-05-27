@@ -10,8 +10,8 @@ from stlr.transcribe import Transcription
 def main():
     parser = ArgumentParser()
     parser.add_argument("-a", "--audio", dest="files", type=Path, nargs="+")
-    parser.add_argument("-m", "--model", default=CONFIG.transcription_models.whisper)
-    parser.add_argument("-f", "--format", choices=("json", "tsv"), default=CONFIG.étoile_settings.export_format)
+    parser.add_argument("-m", "--model", default=CONFIG.model.name)
+    parser.add_argument("-f", "--format", choices=("json", "tsv"), default=CONFIG.étoile.export_format)
     args = parser.parse_args()
 
     if args.files is None:

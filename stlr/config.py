@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 import yaml
@@ -8,11 +8,9 @@ DEFAULT_CONFIG = Path(__file__).parent.parent / "config.yaml"
 
 
 @dataclass
-class TranscriptionModels:
-    whisper: str
-
-    def as_dict(self) -> dict[str, str]:
-        return asdict(self)
+class WhisperModel:
+    name: str
+    device: str | None
 
 
 @dataclass
@@ -28,9 +26,9 @@ class UIThemes:
 
 @dataclass
 class Config:
-    transcription_models: TranscriptionModels
-    whisper_settings: dict[str, Any]
-    étoile_settings: ÉtoileSettings
+    model: WhisperModel
+    whisper: dict[str, Any]
+    étoile: ÉtoileSettings
     ui_themes: UIThemes
 
     @classmethod
@@ -38,9 +36,12 @@ class Config:
         with open(path) as f:
             data = yaml.safe_load(f)
 
+        ws: dict[str, Any] = data["whisper_settings"]
+        model_config = WhisperModel(name=ws.pop("model"), device=ws.pop("device"))
+
         return cls(
-            TranscriptionModels(**data["transcription_models"]),
-            data["whisper_settings"],
+            model_config,
+            ws,
             ÉtoileSettings(**data["étoile_settings"]),
             UIThemes(**data["ui_themes"])
         )

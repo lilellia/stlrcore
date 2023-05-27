@@ -10,8 +10,8 @@ import whisper_timestamped as whisper
 from stlr.config import CONFIG
 from stlr.utils import seconds_to_hms
 
-WHISPER_MODEL = CONFIG.transcription_models.whisper
-WHISPER_SETTINGS = CONFIG.whisper_settings
+WHISPER_MODEL = CONFIG.model.name
+WHISPER_SETTINGS = CONFIG.whisper
 
 
 @dataclass
