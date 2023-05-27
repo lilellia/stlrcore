@@ -3,12 +3,8 @@ from more_itertools import windowed
 import json
 from pathlib import Path
 from tabulate import tabulate
-<<<<<<< HEAD
-from typing import Iterable, Iterator
-import whisper_timestamped as whisper
-=======
 from typing import Any, Iterable, Iterator
->>>>>>> 6e6f851 (provide ability to load/export transcription data in json format)
+import whisper_timestamped as whisper
 
 from stlr.config import CONFIG
 
@@ -47,8 +43,7 @@ class Transcription:
     def from_json(cls, filepath: Path):
         data = json.loads(filepath.read_text())
         return cls.from_dict(data)
-        
-    
+
     @classmethod
     def from_audio(cls, audio_file: Path | str, model_name: str = WHISPER_MODEL):
         """Create a transcription from an audio file using whisper."""
@@ -60,7 +55,7 @@ class Transcription:
             for segment in data["segments"]
             for word in segment["words"]
         ]
-        
+
         return cls(words=words, model=model_name)
 
     @property
