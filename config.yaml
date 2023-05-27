@@ -16,3 +16,10 @@ whisper_settings:
     # These values changed per https://github.com/openai/whisper/discussions/29#discussioncomment-3726290
     no_speech_threshold: 0.30  # default 0.60
     logprob_threshold: null  # default -1.0
+
+ui_themes:
+    # see:
+    # https://ttkbootstrap.readthedocs.io/en/latest/themes/light/
+    # https://ttkbootstrap.readthedocs.io/en/latest/themes/dark/
+    stlr: darkly
+    astral: cyborg

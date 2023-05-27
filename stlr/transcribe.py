@@ -4,14 +4,11 @@ from pathlib import Path
 from tabulate import tabulate
 from typing import Iterable, Iterator
 import whisper_timestamped as whisper
-import yaml
 
+from stlr.config import CONFIG
 
-with open(Path(__file__).parent.parent / "config.yaml") as f:
-    config = yaml.safe_load(f)
-
-WHISPER_MODEL = config["transcription_models"]["whisper"]
-WHISPER_SETTINGS = config["whisper_settings"]
+WHISPER_MODEL = CONFIG.transcription_models.whisper
+WHISPER_SETTINGS = CONFIG.whisper_settings.as_dict()
 
 
 @dataclass
