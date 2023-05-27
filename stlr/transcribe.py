@@ -115,33 +115,33 @@ class Transcription:
 
         return tabulate(data, headers=["Word", "Start", "End", "Duration", "Confidence"], tablefmt=tablefmt)
 
-    def _export_json(self, filepath: Path) -> None:
+    def _export_json(self, filestem: Path, *, suffix: str = ".json") -> None:
         """Export this transcription to file (.json)"""
         data = {
             "model": self.model,
             "text": str(self),
             "words": [asdict(word) for word in self]
         }
-        filepath.write_text(json.dumps(data, indent=4))
+        filestem.with_suffix(suffix).write_text(json.dumps(data, indent=4))
 
-    def _export_tsv(self, filepath: Path) -> None:
-        """Export this transcription to file (Audition cues, .tsv)"""
+    def _export_cue(self, filestem: Path, *, suffix: str = ".csv") -> None:
+        """Export this transcription to file (Audition cues, .csv)"""
         fields = ("Name", "Start", "Duration", "Time Format", "Type", "Description")
         data = [
             (f"Marker {i}", seconds_to_hms(word.start), seconds_to_hms(word.duration), "decimal", "Cue", word.text)
             for i, word in enumerate(self, start=1)
         ]
 
-        with open(filepath, "w", newline="") as f:
+        with open(filestem.with_suffix(suffix), "w", newline="") as f:
             writer = csv.writer(f, dialect="excel-tab")
             writer.writerow(fields)
             writer.writerows(data)
 
-    def export(self, filepath: Path, *, mode: Literal["json", "tsv"] = "json") -> None:
+    def export(self, filestem: Path, *, mode: Literal["json", "cue"] = "json") -> None:
         """Export this transcription to file"""
         export_modes = {
             "json": self._export_json,
-            "tsv": self._export_tsv
+            "cue": self._export_cue
         }
 
-        export_modes[mode](filepath)
+        export_modes[mode](filestem)
