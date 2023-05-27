@@ -10,7 +10,8 @@ from stlr.transcribe import Transcription
 def main():
     parser = ArgumentParser()
     parser.add_argument("-a", "--audio", dest="files", type=Path, nargs="+")
-    parser.add_argument("-m", "--model", default=CONFIG.transcription_models.whisper)
+    parser.add_argument("-m", "--model", default=CONFIG.model.name)
+    parser.add_argument("--cpu", action="store_const", const="cpu", dest="device", default=None)
     args = parser.parse_args()
 
     if args.files is None:
@@ -18,7 +19,7 @@ def main():
 
     
     for file in args.files:
-        output = Transcription.from_audio(file, model_name=args.model).tabulate()
+        output = Transcription.from_audio(file, model_name=args.model, device=args.device).tabulate()
         with open(f"étoile-{file.stem}-{args.model}-{datetime.now():%Y%m%d-%H%M%S}.txt", "w", encoding="utf-8") as f:
             f.write(output)
         print(output)

@@ -7,8 +7,9 @@ import stable_whisper as whisper
 
 from stlr.config import CONFIG
 
-WHISPER_MODEL = CONFIG.transcription_models.whisper
-WHISPER_SETTINGS = CONFIG.whisper_settings
+WHISPER_MODEL = CONFIG.model.name
+WHISPER_DEVICE = CONFIG.model.device
+WHISPER_SETTINGS = CONFIG.whisper
 
 
 @dataclass
@@ -34,9 +35,9 @@ class Transcription:
 
     
     @classmethod
-    def from_audio(cls, audio_file: Path | str, model_name: str = WHISPER_MODEL):
+    def from_audio(cls, audio_file: Path | str, model_name: str = WHISPER_MODEL, device: str | None = WHISPER_DEVICE):
         """Create a transcription from an audio file using whisper."""
-        model = whisper.load_model(model_name)
+        model = whisper.load_model(model_name, device=device)
         result = model.transcribe(str(audio_file), **WHISPER_SETTINGS)
 
         words = [
