@@ -19,10 +19,10 @@ def main():
 
     
     for file in args.files:
-        output = Transcription.from_audio(file, model_name=args.model, device=args.device).tabulate()
-        with open(f"étoile-{file.stem}-{args.model}-{datetime.now():%Y%m%d-%H%M%S}.txt", "w", encoding="utf-8") as f:
-            f.write(output)
-        print(output)
+        transcription = Transcription.from_audio(file, model_name=args.model, device=args.device)
+        
+        transcription.export(Path(f"étoile-{file.stem}-{args.model}-{datetime.now():%Y%m%d-%H%M%S}.json"))
+        print(transcription.tabulate())
 
 
 if __name__ == "__main__":
