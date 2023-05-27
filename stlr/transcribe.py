@@ -5,13 +5,17 @@ import json
 from pathlib import Path
 from tabulate import tabulate
 from typing import Any, Iterable, Iterator, Literal
-import whisper_timestamped as whisper
 
 from stlr.config import CONFIG
+from stlr.models import ModelManager
 from stlr.utils import seconds_to_hms
 
-WHISPER_MODEL = CONFIG.transcription_models.whisper
-WHISPER_SETTINGS = CONFIG.whisper_settings
+WHISPER_MODEL = CONFIG.model.name
+WHISPER_DEVICE = CONFIG.model.device
+WHISPER_SETTINGS = CONFIG.whisper
+
+
+models = ModelManager()
 
 
 @dataclass
@@ -47,15 +51,15 @@ class Transcription:
         return cls.from_dict(data)
 
     @classmethod
-    def from_audio(cls, audio_file: Path | str, model_name: str = WHISPER_MODEL):
+    def from_audio(cls, audio_file: Path | str, model_name: str = WHISPER_MODEL, device: str | None = WHISPER_DEVICE):
         """Create a transcription from an audio file using whisper."""
-        model = whisper.load_model(model_name)
-        data = whisper.transcribe(model, str(audio_file), **WHISPER_SETTINGS)
+        model = models.load(model_name, device=device)
+        result = model.transcribe(str(audio_file), **WHISPER_SETTINGS)
 
         words = [
-            TranscribedWord(**word)
-            for segment in data["segments"]
-            for word in segment["words"]
+            TranscribedWord(text=word.word, start=word.start, end=word.end, confidence=word.probability)
+            for segment in result.segments
+            for word in segment.words
         ]
 
         return cls(words=words, model=model_name)

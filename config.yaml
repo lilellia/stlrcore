@@ -1,18 +1,20 @@
-transcription_models:
+whisper_settings:
+    language: en
+
+    # should be one of:
+    #   null  (will use GPU if available)
+    #   cpu
+    device: null
+        
     # should be one of:
     #   base, large, large-v1, large-v2,
     #   tiny, small, medium,
     #   tiny.en, small.en, medium.en
-    whisper: base
+    model: base
 
-whisper_settings:
-    language: en
-
-    # Whether to detect disfluencies (i.e. hesitations, filler words, repetitions, corrections, etc.)
-    # that Whisper model might have omitted in the transcription.
-    # This should make the word timestamp prediction more accurate.
-    # And probable disfluencies will be marked as special words "[*]".
-    detect_disfluencies: false
+    # These values given per https://github.com/openai/whisper/discussions/435#discussion-4521080
+    max_initial_timestamp: null
+    suppress_silence: true
 
     # These values changed per https://github.com/openai/whisper/discussions/29#discussioncomment-3726290
     no_speech_threshold: 0.30  # default 0.60
