@@ -17,14 +17,10 @@ class TranscriptionModels:
 
 @dataclass
 class WhisperSettings:
-    language: str
+    language: str = "en"
 
-    suppress_silence: bool
-    lower_quantile: float
-    lower_threshold: float
-
-    no_speech_threshold: float
-    logprob_threshold: float | None
+    no_speech_threshold: float = 0.6
+    logprob_threshold: float | None = -1.0
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)

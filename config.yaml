@@ -8,11 +8,6 @@ transcription_models:
 whisper_settings:
     language: en
 
-    # These values taken from https://github.com/openai/whisper/discussions/435#discussion-4521080
-    suppress_silence: true
-    lower_quantile: 0.05
-    lower_threshold: 0.10
-
     # These values changed per https://github.com/openai/whisper/discussions/29#discussioncomment-3726290
     no_speech_threshold: 0.30  # default 0.60
     logprob_threshold: null  # default -1.0
