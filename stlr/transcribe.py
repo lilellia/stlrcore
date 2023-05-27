@@ -47,7 +47,7 @@ class Transcription:
 
     @classmethod
     def from_json(cls, filepath: Path):
-        data = json.loads(filepath.read_text())
+        data = json.loads(filepath.read_text(encoding="utf-8"))
         return cls.from_dict(data)
 
     @classmethod
@@ -122,7 +122,7 @@ class Transcription:
             "text": str(self),
             "words": [asdict(word) for word in self]
         }
-        filestem.with_suffix(suffix).write_text(json.dumps(data, indent=4))
+        filestem.with_suffix(suffix).write_text(json.dumps(data, indent=4), encoding="utf-8")
 
     def _export_cue(self, filestem: Path, *, suffix: str = ".csv") -> None:
         """Export this transcription to file (Audition cues, .csv)"""
