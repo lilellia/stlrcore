@@ -8,7 +8,7 @@ import whisper_timestamped as whisper
 from stlr.config import CONFIG
 
 WHISPER_MODEL = CONFIG.transcription_models.whisper
-WHISPER_SETTINGS = CONFIG.whisper_settings.as_dict()
+WHISPER_SETTINGS = CONFIG.whisper_settings
 
 
 @dataclass

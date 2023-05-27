@@ -16,17 +16,6 @@ class TranscriptionModels:
 
 
 @dataclass
-class WhisperSettings:
-    language: str = "en"
-
-    no_speech_threshold: float = 0.6
-    logprob_threshold: float | None = -1.0
-
-    def as_dict(self) -> dict[str, Any]:
-        return asdict(self)
-
-
-@dataclass
 class UIThemes:
     stlr: str
     astral: str
@@ -35,7 +24,7 @@ class UIThemes:
 @dataclass
 class Config:
     transcription_models: TranscriptionModels
-    whisper_settings: WhisperSettings
+    whisper_settings: dict[str, Any]
     ui_themes: UIThemes
 
     @classmethod
@@ -45,7 +34,7 @@ class Config:
 
         return cls(
             TranscriptionModels(**data["transcription_models"]),
-            WhisperSettings(**data["whisper_settings"]),
+            data["whisper_settings"],
             UIThemes(**data["ui_themes"])
         )
 
