@@ -1,12 +1,14 @@
+import csv
 from dataclasses import asdict, dataclass
 from more_itertools import windowed
 import json
 from pathlib import Path
 from tabulate import tabulate
-from typing import Any, Iterable, Iterator
+from typing import Any, Iterable, Iterator, Literal
 import whisper_timestamped as whisper
 
 from stlr.config import CONFIG
+from stlr.utils import seconds_to_hms
 
 WHISPER_MODEL = CONFIG.transcription_models.whisper
 WHISPER_SETTINGS = CONFIG.whisper_settings
@@ -109,7 +111,7 @@ class Transcription:
 
         return tabulate(data, headers=["Word", "Start", "End", "Duration", "Confidence"], tablefmt=tablefmt)
 
-    def export(self, filepath: Path) -> None:
+    def _export_json(self, filepath: Path) -> None:
         """Export this transcription to file (.json)"""
         data = {
             "model": self.model,
@@ -117,3 +119,25 @@ class Transcription:
             "words": [asdict(word) for word in self]
         }
         filepath.write_text(json.dumps(data, indent=4))
+
+    def _export_tsv(self, filepath: Path) -> None:
+        """Export this transcription to file (Audition cues, .tsv)"""
+        fields = ("Name", "Start", "Duration", "Time Format", "Type", "Description")
+        data = [
+            (f"Marker {i}", seconds_to_hms(word.start), seconds_to_hms(word.duration), "decimal", "Cue", word.text)
+            for i, word in enumerate(self, start=1)
+        ]
+
+        with open(filepath, "w", newline="") as f:
+            writer = csv.writer(f, dialect="excel-tab")
+            writer.writerow(fields)
+            writer.writerows(data)
+
+    def export(self, filepath: Path, *, mode: Literal["json", "tsv"] = "json") -> None:
+        """Export this transcription to file"""
+        export_modes = {
+            "json": self._export_json,
+            "tsv": self._export_tsv
+        }
+
+        export_modes[mode](filepath)
