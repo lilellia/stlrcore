@@ -3,11 +3,14 @@ from pathlib import Path
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, askopenfilenames
 import ttkbootstrap as ttkb  # type: ignore
-from typing import Any
+from typing import Any, Callable, Generic, Iterable, TypeVar
 
 from stlr.transcribe import Transcription
 from stlr.utils import truncate_path
 from stlr.vn import ATLImageGenerator, renpyify
+
+
+T = TypeVar("T")
 
 
 class CEntry(ttkb.Entry):
@@ -22,6 +25,22 @@ class CEntry(ttkb.Entry):
     @text.setter
     def text(self, text: str) -> None:
         self._var.set(text)
+
+
+class CDropdown(ttkb.OptionMenu, Generic[T]):
+    def __init__(self, master: Any, options: Iterable[T], mapfunc: Callable[[str], T] = str):
+        self._var = ttkb.StringVar(master)
+        self.options = tuple(str(x) for x in options)
+        self.mapfunc = mapfunc
+        super().__init__(master, self._var, self.options[0], *self.options)
+
+    @property
+    def value(self) -> T:
+        return self.mapfunc(self._var.get())
+
+    @value.setter
+    def value(self, val: T) -> None:
+        self._var.set(str(val))
 
 
 class CSwitch(ttkb.Checkbutton):
@@ -126,9 +145,10 @@ class AstralApp(ttkb.Window):
         self.open_mouth_box, self.open_mouth_button = file_selection_row(self, row=2, label_text="Open mouth image", grid_kw=grid_kw)
         self.closed_mouth_box, self.closed_mouth_button = file_selection_row(self, row=3, label_text="Closed mouth image", grid_kw=grid_kw)
 
-        # json toggle
-        self.json_toggle = CSwitch(self, text="is JSON import?", bootstyle="info.RoundToggle")
-        self.json_toggle.grid(row=0, column=3, **grid_kw)
+        # input file type
+        ttkb.Label(self, text="data file type").grid(row=0, column=2, **grid_kw)
+        self.ifiletype_selector = CDropdown(self, options=("audio", "json", "audacity cue", "audition cue"))
+        self.ifiletype_selector.grid(row=0, column=3, **grid_kw)
 
         self.annotation_type = CSwitch(self, text="Detailed Annotations", bootstyle="info.RoundToggle.Toolbutton")
         self.annotation_type.grid(row=1, column=3, **grid_kw)
@@ -163,7 +183,7 @@ class AstralApp(ttkb.Window):
         self.update()
 
         data_file = Path(self.audio_file_box.text)
-        self.transcription = Transcription.from_json(data_file) if self.json_toggle.checked else Transcription.from_audio(data_file)
+        self.transcription = Transcription.load(data_file, mode=self.ifiletype_selector.value)
 
         open_image = Path(self.open_mouth_box.text)
         if not self.full_image_path.checked:
