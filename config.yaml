@@ -18,6 +18,10 @@ whisper_settings:
     no_speech_threshold: 0.30  # default 0.60
     logprob_threshold: null  # default -1.0
 
+étoile_settings:
+    # should be "json" or "tsv"
+    export_format: json
+
 ui_themes:
     # see:
     # https://ttkbootstrap.readthedocs.io/en/latest/themes/light/

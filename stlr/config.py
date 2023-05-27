@@ -16,6 +16,11 @@ class TranscriptionModels:
 
 
 @dataclass
+class ÉtoileSettings:
+    export_format: str = "json"
+
+
+@dataclass
 class UIThemes:
     stlr: str
     astral: str
@@ -25,6 +30,7 @@ class UIThemes:
 class Config:
     transcription_models: TranscriptionModels
     whisper_settings: dict[str, Any]
+    étoile_settings: ÉtoileSettings
     ui_themes: UIThemes
 
     @classmethod
@@ -35,6 +41,7 @@ class Config:
         return cls(
             TranscriptionModels(**data["transcription_models"]),
             data["whisper_settings"],
+            ÉtoileSettings(**data["étoile_settings"]),
             UIThemes(**data["ui_themes"])
         )
 
