@@ -3,7 +3,7 @@ from more_itertools import windowed
 from pathlib import Path
 from tabulate import tabulate
 from typing import Iterable, Iterator
-import whisper_timestamped as whisper
+import stable_whisper as whisper
 
 from stlr.config import CONFIG
 
@@ -37,12 +37,12 @@ class Transcription:
     def from_audio(cls, audio_file: Path | str, model_name: str = WHISPER_MODEL):
         """Create a transcription from an audio file using whisper."""
         model = whisper.load_model(model_name)
-        data = whisper.transcribe(model, str(audio_file), **WHISPER_SETTINGS)
+        result = model.transcribe(str(audio_file), **WHISPER_SETTINGS)
 
         words = [
-            TranscribedWord(**word)
-            for segment in data["segments"]
-            for word in segment["words"]
+            TranscribedWord(text=word.word, start=word.start, end=word.end, confidence=word.probability)
+            for segment in result.segments
+            for word in segment.words
         ]
         
         return cls(words=words, model=model_name)
