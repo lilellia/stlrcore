@@ -1,6 +1,0 @@
-[transcription-models]
-# should be one of:
-#   base, large, large-v1, large-v2,
-#   tiny, small, medium,
-#   tiny.en, small.en, medium.en
-whisper = "base"

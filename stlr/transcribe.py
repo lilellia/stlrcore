@@ -1,16 +1,17 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from more_itertools import windowed
 from pathlib import Path
 from tabulate import tabulate
-import toml
 from typing import Iterable, Iterator
 import whisper_timestamped as whisper
+import yaml
 
 
-with open(Path(__file__).parent.parent / "config.toml") as f:
-    config = toml.load(f)
+with open(Path(__file__).parent.parent / "config.yaml") as f:
+    config = yaml.safe_load(f)
 
-WHISPER_MODEL = config["transcription-models"]["whisper"]
+WHISPER_MODEL = config["transcription_models"]["whisper"]
+WHISPER_SETTINGS = config["whisper_settings"]
 
 
 @dataclass
@@ -30,15 +31,16 @@ class TranscribedWord:
 
 
 class Transcription:
-    def __init__(self, words: Iterable[TranscribedWord]):
+    def __init__(self, words: Iterable[TranscribedWord], *, model: str | None = None):
         self.transcription = tuple(words)
+        self.model = model
 
     
     @classmethod
     def from_audio(cls, audio_file: Path | str, model_name: str = WHISPER_MODEL):
         """Create a transcription from an audio file using whisper."""
         model = whisper.load_model(model_name)
-        data = whisper.transcribe(model, str(audio_file))
+        data = whisper.transcribe(model, str(audio_file), **WHISPER_SETTINGS)
 
         words = [
             TranscribedWord(**word)
@@ -46,7 +48,7 @@ class Transcription:
             for word in segment["words"]
         ]
         
-        return cls(words=words)
+        return cls(words=words, model=model_name)
 
     @property
     def start(self) -> float:
