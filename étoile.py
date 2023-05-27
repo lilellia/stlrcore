@@ -10,7 +10,7 @@ from stlr.transcribe import Transcription
 def main():
     parser = ArgumentParser()
     parser.add_argument("-a", "--audio", dest="files", type=Path, nargs="+")
-    parser.add_argument("-f", "--format", choices=("json", "cue"), default=CONFIG.étoile_settings.export_format)
+    parser.add_argument("-f", "--format", choices=("json", "audacity", "audition"), default=CONFIG.étoile_settings.export_format)
     parser.add_argument("-m", "--model", default=CONFIG.model.name)
     parser.add_argument("--cpu", action="store_const", const="cpu", dest="device", default=None)
     args = parser.parse_args()

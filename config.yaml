@@ -21,7 +21,8 @@ whisper_settings:
     logprob_threshold: null  # default -1.0
 
 étoile_settings:
-    # should be "json" or "tsv"
+    # should be one of
+    # json, audacity, audition
     export_format: json
 
 ui_themes:

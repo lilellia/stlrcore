@@ -51,6 +51,46 @@ class Transcription:
         return cls.from_dict(data)
 
     @classmethod
+    def from_audition_cue(cls, filepath: Path):
+        with open(filepath, encoding="utf-8") as f:
+            reader = csv.reader(f, dialect="excel-tab", delimiter="\t")
+            next(reader, None)
+            rows = list(reader)
+
+        # fields: "Name", "Start", "Duration", "Time Format", "Type", "Description"
+        words = [
+            TranscribedWord(text=text, start=float(start), end=float(start) + float(duration), confidence=0)
+            for (_, start, duration, _, _, text) in rows
+        ]
+
+        return cls(words=words)
+
+    @classmethod
+    def from_audacity_cue(cls, filepath: Path):
+        with open(filepath, encoding="utf-8") as f:
+            reader = csv.reader(f, dialect="excel-tab", delimiter="\t")
+            rows = list(reader)
+
+        # fields: "Start", "End", "Comment"
+        words = [
+            TranscribedWord(text=text, start=float(start), end=float(end), confidence=0)
+            for (start, end, text) in rows
+        ]
+
+        return cls(words=words)
+
+    @classmethod
+    def load(cls, filepath: Path, *, mode: str):
+        LOAD_MODES = {
+            "audio": cls.from_audio,
+            "json": cls.from_json,
+            "audacity": cls.from_audacity_cue,
+            "audition": cls.from_audition_cue
+        }
+
+        return LOAD_MODES[mode](filepath)
+
+    @classmethod
     def from_audio(cls, audio_file: Path | str, model_name: str = WHISPER_MODEL, device: str | None = WHISPER_DEVICE):
         """Create a transcription from an audio file using whisper."""
         model = models.load(model_name, device=device)
@@ -124,24 +164,38 @@ class Transcription:
         }
         filestem.with_suffix(suffix).write_text(json.dumps(data, indent=4), encoding="utf-8")
 
-    def _export_cue(self, filestem: Path, *, suffix: str = ".csv") -> None:
-        """Export this transcription to file (Audition cues, .csv)"""
-        fields = ("Name", "Start", "Duration", "Time Format", "Type", "Description")
+    def _export_audacity_cue(self, filestem: Path, *, suffix: str = ".txt") -> None:
+        """Export this transcription as Audacity labels."""
+
+        # fields = (start, float) (end, float) (comment, optional str)
+        data = [
+            [format(word.start, ".6f"), format(word.end, ".6f"), word.text]
+            for word in self
+        ]
+
+        with open(filestem.with_suffix(suffix), "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, dialect="excel-tab", delimiter="\t")
+            writer.writerows(data)
+
+    def _export_audition_cue(self, filestem: Path, *, suffix: str = ".csv") -> None:
+        """Export this transcription as Audition cues"""
+        fields = ["Name", "Start", "Duration", "Time Format", "Type", "Description"]
         data = [
             (f"Marker {i}", seconds_to_hms(word.start), seconds_to_hms(word.duration), "decimal", "Cue", word.text)
             for i, word in enumerate(self, start=1)
         ]
 
-        with open(filestem.with_suffix(suffix), "w", newline="") as f:
+        with open(filestem.with_suffix(suffix), "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f, dialect="excel-tab")
             writer.writerow(fields)
             writer.writerows(data)
 
-    def export(self, filestem: Path, *, mode: Literal["json", "cue"] = "json") -> None:
+    def export(self, filestem: Path, *, mode: Literal["json", "audacity", "audition"] = "json") -> None:
         """Export this transcription to file"""
-        export_modes = {
+        EXPORT_MODES = {
             "json": self._export_json,
-            "cue": self._export_cue
+            "audacity": self._export_audacity_cue,
+            "audition": self._export_audition_cue
         }
 
-        export_modes[mode](filestem)
+        EXPORT_MODES[mode](filestem)
