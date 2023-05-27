@@ -119,8 +119,8 @@ class Transcription:
             "text": str(self),
             "words": [asdict(word) for word in self]
         }
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(json.dumps(data, indent=4))
+
+        filepath.write_text(json.dumps(data, indent=4), encoding="utf-8")
 
     def _export_tsv(self, filepath: Path) -> None:
         """Export this transcription to file (Audition cues, .tsv)"""
