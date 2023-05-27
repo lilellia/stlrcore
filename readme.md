@@ -38,5 +38,5 @@ Select an audio file, as well as the two image files, then press "Generate ATL".
 After cloning this repository, simply run
 
 ```sh
-python3 -m pip install ttkbootstrap loguru more-itertools openai-whisper toml tabulate[wide-chars] git+https://github.com/linto-ai/whisper-timestamped
+python3 -m pip install ttkbootstrap loguru more-itertools openai-whisper pyyaml tabulate[wide-chars] git+https://github.com/linto-ai/whisper-timestamped
 ```
