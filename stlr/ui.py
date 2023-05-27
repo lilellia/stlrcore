@@ -5,7 +5,7 @@ from tkinter.filedialog import askopenfilename, askopenfilenames
 import ttkbootstrap as ttkb  # type: ignore
 from typing import Any
 
-from stlr.transcribe import transcribe
+from stlr.transcribe import Transcription
 from stlr.utils import truncate_path
 from stlr.vn import ATLImageGenerator, renpyify
 
@@ -105,7 +105,8 @@ class STLRApp(ttkb.Window):
 
     def transcribe(self) -> None:
         for path, entry in zip(self.filenames, self.transcriptions):
-            entry.text = renpyify(transcribe(path))
+            transcription = Transcription.from_audio(path)
+            entry.text = renpyify(transcription)
 
 
 class AstralApp(ttkb.Window):
@@ -157,7 +158,7 @@ class AstralApp(ttkb.Window):
         self.atl_box.text = "Generating⋯"
         self.update()
 
-        self.transcription = transcribe(Path(self.audio_file_box.text))
+        self.transcription = Transcription.from_audio(self.audio_file_box.text)
 
         open_image = Path(self.open_mouth_box.text)
         if not self.full_image_path.checked:

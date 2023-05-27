@@ -2,7 +2,7 @@
 
 ## Overview
 
-`stlr` is a toolkit designed to assist in the development of voice-acted visual novels. It comes with three primary components:
+`stlr` is a toolkit designed to assist in the development of voice-acted visual novels. It comes with these components:
 
 ### ※ stlr.py
 `stlr.py` can transcribe the audio of a line and output a Ren'Py say statement with the pauses between words notated in an effort to have the text scroll alongside the audio.
@@ -28,10 +28,15 @@ Select an audio file, as well as the two image files, then press "Generate ATL".
 `impatient.py` is designed to remove all Ren'Py `{w=...}` wait tags from a script.
 
 
+### ※ étoile.py
+
+`étoile.py` is designed to simply output the detailed timing data for a transcription. Can accept a file parameter from command line: if not provided, will launch file selection window.
+
+
 ## Installation
 
 After cloning this repository, simply run
 
 ```sh
-python3 -m pip install -r requirements.txt
+python3 -m pip install ttkbootstrap loguru more-itertools openai-whisper toml tabulate[wide-chars] git+https://github.com/linto-ai/whisper-timestamped
 ```

@@ -1,28 +1,24 @@
 from dataclasses import dataclass
-import json
-from loguru import logger
 from more_itertools import windowed
 from pathlib import Path
 from tabulate import tabulate
 import toml
-from typing import Any, Iterable, Iterator
-import whisper  # type: ignore
-
-from stlr.audio import load_audio, build_recognizer
+from typing import Iterable, Iterator
+import whisper_timestamped as whisper
 
 
 with open(Path(__file__).parent.parent / "config.toml") as f:
     config = toml.load(f)
 
 WHISPER_MODEL = config["transcription-models"]["whisper"]
-VOSK_MODEL = config["transcription-models"]["vosk"]
 
 
 @dataclass
 class TranscribedWord:
-    word: str
+    text: str
     start: float
     end: float
+    confidence: float
 
     @property
     def duration(self) -> float:
@@ -30,36 +26,55 @@ class TranscribedWord:
         return self.end - self.start
 
     def __str__(self) -> str:
-        return f"{self.word}({self.start}-{self.end}/{self.duration:.3f})"
+        return f"{self.text}({self.start}-{self.end}/{self.duration:.3f})"
 
 
 class Transcription:
-    def __init__(self, words: Iterable[TranscribedWord], *, confident: bool = True):
-        self._transcription = tuple(words)
-        self._confident = confident
+    def __init__(self, words: Iterable[TranscribedWord]):
+        self.transcription = tuple(words)
+
+    
+    @classmethod
+    def from_audio(cls, audio_file: Path | str, model_name: str = WHISPER_MODEL):
+        """Create a transcription from an audio file using whisper."""
+        model = whisper.load_model(model_name)
+        data = whisper.transcribe(model, str(audio_file))
+
+        words = [
+            TranscribedWord(**word)
+            for segment in data["segments"]
+            for word in segment["words"]
+        ]
+        
+        return cls(words=words)
 
     @property
     def start(self) -> float:
         """Return the time (in seconds) that the first word begins."""
-        return self._transcription[0].start
+        return self.transcription[0].start
 
     @property
     def duration(self) -> float:
         """Return the length of time (in seconds) that the transcription lasts."""
-        return self._transcription[-1].end
+        return self.transcription[-1].end
 
     @property
-    def confident(self) -> bool:
-        return self._confident
+    def confidence(self) -> float:
+        """Return an overall confidence, the mean of all word confidences."""
+        return sum(t.confidence for t in self) / len(self)
+
+    @property
+    def min_confidence(self) -> float:
+        return min(t.confidence for t in self)
 
     def __iter__(self) -> Iterator[TranscribedWord]:
-        return iter(self._transcription)
+        return iter(self.transcription)
 
     def __len__(self) -> int:
-        return len(self._transcription)
+        return len(self.transcription)
 
     def __str__(self) -> str:
-        return " ".join(t.word for t in self)
+        return " ".join(t.text for t in self)
 
     @property
     def waits(self) -> list[float]:
@@ -78,56 +93,8 @@ class Transcription:
     def tabulate(self, *, tablefmt: str = "rounded_grid") -> str:
         """Return a prettified, tabular representation."""
         data = [
-            [t.word, t.start, t.end, t.duration]
+            [t.text, t.start, t.end, t.duration, t.confidence]
             for t in self
         ]
 
-        return tabulate(data, headers=["Word", "Start", "End", "Duration"], tablefmt=tablefmt)
-
-
-def _transcribe_partial(result: Any) -> list[TranscribedWord]:
-    """Transcribe a section of audio, as defined by the Result str."""
-    data = json.loads(result)
-    guess: list[dict[str, Any]] = data["alternatives"][0].get("result", [])
-
-    return [TranscribedWord(**w) for w in guess]
-
-
-def _transcribe_vosk(audio_file: Path, model: str = VOSK_MODEL) -> Transcription:
-    """Transcribe an audio file in the given language while providing timing information."""
-    audio = load_audio(audio_file)
-    recognizer = build_recognizer(audio, model=model)
-
-    words: list[TranscribedWord] = []
-    while (data := audio.readframes(4000)):
-        if not recognizer.AcceptWaveform(data):  # type: ignore
-            continue
-
-        words += _transcribe_partial(recognizer.Result())
-
-    return Transcription(words + _transcribe_partial(recognizer.FinalResult()))
-
-
-def _transcribe_whisper(audio_file: Path, model: str = WHISPER_MODEL) -> list[str]:
-    """Accurately transcribe an audio file."""
-    model = whisper.load_model(model)
-    return model.transcribe(str(audio_file))["text"].split()  # type: ignore
-
-
-def transcribe(
-        audio_file: Path,
-        whisper_model: str = WHISPER_MODEL,
-        vosk_model: str = VOSK_MODEL
-) -> Transcription:
-    """Transcribe an audio file in the given language."""
-    timed = _transcribe_vosk(audio_file, model=vosk_model)
-    untimed = _transcribe_whisper(audio_file, model=whisper_model)
-
-    if len(timed) != len(untimed):
-        logger.warning(f"   vosk: [{len(timed)}] {' '.join(s.word for s in timed)}")
-        logger.warning(f"whisper: [{len(untimed)}] {' '.join(untimed)}")
-
-        return Transcription(timed, confident=False)
-
-    # If they have the same length, assume that the untimed (whisper) transcription is correct.
-    return Transcription(TranscribedWord(w, v.start, v.end) for v, w in zip(timed, untimed))
+        return tabulate(data, headers=["Word", "Start", "End", "Duration", "Confidence"], tablefmt=tablefmt)
