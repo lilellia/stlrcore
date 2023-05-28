@@ -1,5 +1,5 @@
 from stlr.config import CONFIG
-from stlr.ui import STLRApp
+from stlr.stlr import STLRApp
 
 
 if __name__ == "__main__":

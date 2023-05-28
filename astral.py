@@ -1,5 +1,5 @@
 from stlr.config import CONFIG
-from stlr.ui import AstralApp
+from stlr.astral import AstralApp
 
 
 def main():
