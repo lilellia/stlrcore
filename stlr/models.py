@@ -1,12 +1,7 @@
-from difflib import SequenceMatcher
 import json
-from loguru import logger
 from pathlib import Path
-from pprint import pprint
-import re
 import stable_whisper
 from stable_whisper.result import WordTiming
-from termcolor import colored
 from typing import Any, Protocol
 import vosk
 import wave
@@ -36,7 +31,7 @@ class OpenAIWhisper:
         vosk_result = self._vosk_transcribe(audio_file, model_name=vosk_model)
         whisper_result: dict[str, Any] = self.whisper_model.transcribe(str(audio_file), **kwargs)  # type: ignore
 
-        return self.reconcile(whisper_result, vosk_result)
+        return stlr.hoshi.reconcile(whisper_result, vosk_result, mode=stlr.config.CONFIG.hoshi.reconciliation)
 
     def _get_vosk_recognizer(self, audio: wave.Wave_read, model_name: str = stlr.config.CONFIG.vosk.model) -> vosk.KaldiRecognizer:
         model = vosk.Model(model_name=model_name)
@@ -67,59 +62,7 @@ class OpenAIWhisper:
         result.extend(_partial(r.FinalResult()))
         return result
 
-    def reconcile(self, whisper_result: dict[str, Any], vosk_result: list[WordTiming]) -> stable_whisper.WhisperResult:
-        whisper_words = len(whisper_result["text"].split())
-        vosk_words = len(vosk_result)
 
-        if whisper_words == vosk_words:
-            logger.info(f"# of words match between whisper & vosk transcriptions ({whisper_words})")
-            logger.info(f"assigning vosk timings onto whisper transcription")
-
-            return self._reconcile_matching(whisper_result, vosk_result)
-
-        logger.warning(f"# of words differ between transcriptions: whisper ({whisper_words}) / vosk ({vosk_words})")
-        logger.warning(f"whisper: {whisper_result['text']}")
-        logger.warning(f"   vosk: {' '.join(w.word for w in vosk_result)}")
-        return self._reconcile_unmatching(whisper_result, vosk_result)
-
-    @staticmethod
-    def _reconcile_matching(whisper_result: dict[str, Any], vosk_result: list[WordTiming]) -> stable_whisper.WhisperResult:
-        """Construct a WhisperResult by combining the timing results from vosk with the untimed transcription from whisper."""
-        resolved: dict[str, Any] = whisper_result
-        viter = iter(vosk_result)
-
-        segment: dict[str, Any]
-        for segment in resolved["segments"]:
-            segment["words"] = [v for v, _ in zip(viter, segment["text"].split())]
-
-        assert next(viter, None) is None
-
-        return stable_whisper.WhisperResult(resolved)
-
-    @staticmethod
-    def _reconcile_unmatching(whisper_result: dict[str, Any], vosk_result: list[WordTiming]) -> stable_whisper.WhisperResult:
-        """Resolve an unmatching pair of results by allowing hoshi to intercede."""
-
-        if stlr.config.CONFIG.hoshi.reconciliation in {"naive", "naïve"}:
-            resolved: dict[str, Any] = {
-                "language": whisper_result.get("language", "en"),
-                "segments": [
-                    {
-                        "start": min(w.start for w in vosk_result),
-                        "end": max(w.end for w in vosk_result),
-                        "words": vosk_result,
-                        "text": " ".join(w.word for w in vosk_result)
-                    }
-                ]
-            }
-            
-            return stable_whisper.WhisperResult(resolved)
-        
-        # otherwise, perform assisted reconciliation
-        hoshi = stlr.ui.HoshiApp("星 hoshi", themename="darkly", whisper_result=whisper_result, vosk_result=vosk_result)
-        hoshi.mainloop()  # modifies whisper_result in place
-
-        return stable_whisper.WhisperResult(whisper_result)
 
 
 class StableWhisper:

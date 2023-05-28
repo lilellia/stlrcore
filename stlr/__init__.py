@@ -1,9 +1,5 @@
 from . import (
-    audio_utils,
-    config,
-    models,
-    transcribe,
-    ui,
-    utils, 
-    vn
+    astral, hoshi, stlr,
+    models, transcribe,
+    audio_utils, utils, config
 )
