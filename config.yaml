@@ -38,7 +38,7 @@ vosk_settings:
 
 hoshi_settings:
     # should be one of:
-    #   naive
+    #   simple
     #   assisted
     reconciliation: assisted
 
