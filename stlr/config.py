@@ -8,6 +8,11 @@ DEFAULT_CONFIG = Path(__file__).parent.parent / "config.yaml"
 
 
 @dataclass
+class VoskModel:
+    model: str
+
+
+@dataclass
 class WhisperModel:
     name: str
     device: str | None = None
@@ -29,6 +34,7 @@ class UIThemes:
 class Config:
     model: WhisperModel
     whisper: dict[str, Any]
+    vosk: VoskModel
     étoile: ÉtoileSettings
     ui_themes: UIThemes
 
@@ -39,7 +45,7 @@ class Config:
 
         ws: dict[str, Any] = data["whisper_settings"]
         model_config = WhisperModel(name=ws.pop("model"), device=ws.pop("device"), library=ws.pop("library"))
-        return cls(model_config, ws, ÉtoileSettings(**data["étoile_settings"]), UIThemes(**data["ui_themes"]))
+        return cls(model_config, ws, VoskModel(**data["vosk_settings"]), ÉtoileSettings(**data["étoile_settings"]), UIThemes(**data["ui_themes"]))
 
 
 CONFIG = Config.load()

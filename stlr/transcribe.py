@@ -4,6 +4,7 @@ from more_itertools import windowed
 import json
 from pathlib import Path
 from stable_whisper import WhisperResult
+from stable_whisper.result import WordTiming
 from tabulate import tabulate
 from typing import Any, Iterable, Iterator, Literal
 
@@ -17,31 +18,15 @@ WHISPER_SETTINGS = CONFIG.whisper
 MODEL_MANAGER = ModelManager()
 
 
-@dataclass
-class TranscribedWord:
-    text: str
-    start: float
-    end: float
-    confidence: float
-
-    @property
-    def duration(self) -> float:
-        """Return the length of time the word is spoken."""
-        return self.end - self.start
-
-    def __str__(self) -> str:
-        return f"{self.text}({self.start}-{self.end}/{self.duration:.3f})"
-
-
 class Transcription:
-    def __init__(self, words: Iterable[TranscribedWord], *, model: str | None = None):
+    def __init__(self, words: Iterable[WordTiming], *, model: str | None = None):
         self.transcription = tuple(words)
         self.model = model
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]):
         model = data.pop("model")
-        words = [TranscribedWord(**t) for t in data.pop("words")]
+        words = [WordTiming(**t) for t in data.pop("words")]
         return cls(words=words, model=model)
 
     @classmethod
@@ -58,8 +43,8 @@ class Transcription:
 
         # fields: "Name", "Start", "Duration", "Time Format", "Type", "Description"
         words = [
-            TranscribedWord(text=text, start=float(start), end=float(start) + float(duration), confidence=0)
-            for (_, start, duration, _, _, text) in rows
+            WordTiming(word=word, start=float(start), end=float(start) + float(duration))
+            for (_, start, duration, _, _, word) in rows
         ]
 
         return cls(words=words)
@@ -72,8 +57,8 @@ class Transcription:
 
         # fields: "Start", "End", "Comment"
         words = [
-            TranscribedWord(text=text, start=float(start), end=float(end), confidence=0)
-            for (start, end, text) in rows
+            WordTiming(word=word, start=float(start), end=float(end))
+            for (start, end, word) in rows
         ]
 
         return cls(words=words)
@@ -92,11 +77,7 @@ class Transcription:
     @classmethod
     def from_whisper_result(cls, result: WhisperResult, *, model: str | None = None):
         try:
-            words = [
-                TranscribedWord(w.word, w.start, w.end, confidence=w.probability)
-                for segment in result.segments
-                for w in segment.words
-            ]
+            words = [w for segment in result.segments for w in segment.words]
         except TypeError:
             # probably using OpenAIWhisper
             words = []
@@ -126,20 +107,20 @@ class Transcription:
     @property
     def confidence(self) -> float:
         """Return an overall confidence, the mean of all word confidences."""
-        return sum(t.confidence for t in self) / len(self)
+        return sum(t.probability for t in self) / len(self)
 
     @property
     def min_confidence(self) -> float:
-        return min(t.confidence for t in self)
+        return min(t.probability for t in self)
 
-    def __iter__(self) -> Iterator[TranscribedWord]:
+    def __iter__(self) -> Iterator[WordTiming]:
         return iter(self.transcription)
 
     def __len__(self) -> int:
         return len(self.transcription)
 
     def __str__(self) -> str:
-        return " ".join(t.text for t in self)
+        return " ".join(t.word for t in self)
 
     @property
     def waits(self) -> list[float]:
@@ -158,7 +139,7 @@ class Transcription:
     def tabulate(self, *, tablefmt: str = "rounded_grid") -> str:
         """Return a prettified, tabular representation."""
         data = [
-            [t.text, t.start, t.end, t.duration, t.confidence]
+            [t.word, t.start, t.end, t.duration, t.probability]
             for t in self
         ]
 
@@ -178,7 +159,7 @@ class Transcription:
 
         # fields = (start, float) (end, float) (comment, optional str)
         data = [
-            [format(word.start, ".6f"), format(word.end, ".6f"), word.text]
+            [format(word.start, ".6f"), format(word.end, ".6f"), word.word]
             for word in self
         ]
 
@@ -190,7 +171,7 @@ class Transcription:
         """Export this transcription as Audition cues"""
         fields = ["Name", "Start", "Duration", "Time Format", "Type", "Description"]
         data = [
-            (f"Marker {i}", seconds_to_hms(word.start), seconds_to_hms(word.duration), "decimal", "Cue", word.text)
+            (f"Marker {i}", seconds_to_hms(word.start), seconds_to_hms(word.duration), "decimal", "Cue", word.word)
             for i, word in enumerate(self, start=1)
         ]
 

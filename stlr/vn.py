@@ -1,7 +1,8 @@
 from itertools import cycle
 from pathlib import Path
+from stable_whisper.result import WordTiming
 
-from stlr.transcribe import TranscribedWord, Transcription
+from stlr.transcribe import Transcription
 from stlr.utils import frange, get_space_prefix, read_leading_float
 
 
@@ -16,7 +17,7 @@ def renpyify(transcription: Transcription) -> str:
     """Convert the list of transcribed words into a Ren'Py say statement."""
     waits = transcription.waits
     return " ".join(
-        f"{word.text}{wait_tag(wait)}"
+        f"{word.word}{wait_tag(wait)}"
         for word, wait in zip(transcription, waits)
     )
 
@@ -46,7 +47,7 @@ class ATLImageGenerator:
             # so we only need the word headers/tails that are generated over there
             return ""
 
-        boundaries = sorted([(t.text, t.start, "start") for t in self.transcription if start <= t.start < end], key=lambda item: item[1])
+        boundaries = sorted([(t.word, t.start, "start") for t in self.transcription if start <= t.start < end], key=lambda item: item[1])
 
         if not verbose:
             # unassisted mode, so we don't have the headers/tails
@@ -54,7 +55,7 @@ class ATLImageGenerator:
             return f"  # {annotation}" if annotation else ""
 
         # otherwise, we need the detailed annotation, so...
-        boundaries += [(t.text, t.end, "end") for t in self.transcription if start < t.end <= end]
+        boundaries += [(t.word, t.end, "end") for t in self.transcription if start < t.end <= end]
         boundaries.sort(key=lambda item: item[1])
 
         annotation = f"  # animation time: {start:.3f} → {end:.3f} "
@@ -101,7 +102,7 @@ class ATLImageGenerator:
         self._atl = "\n".join(lines)
         return self._atl
 
-    def _generate_smart_block(self, word: TranscribedWord, target_frame_time: float = 0.2, *, verbose: bool = True) -> list[str]:
+    def _generate_smart_block(self, word: WordTiming, target_frame_time: float = 0.2, *, verbose: bool = True) -> list[str]:
         # The actual length (in seconds) of each frame.
         #                               ↓ the "actual" number of frames, as close to target number
         frame_length = word.duration / max(round(word.duration / target_frame_time), 1)
@@ -112,8 +113,8 @@ class ATLImageGenerator:
         )
 
         # add delineating comments
-        pre_block = f"    # ↓ --- {word.text} (duration: {word.duration:.2f}s) --- ↓"
-        post_block = f"    # ↑ --- {word.text} --- ↑"
+        pre_block = f"    # ↓ --- {word.word} (duration: {word.duration:.2f}s) --- ↓"
+        post_block = f"    # ↑ --- {word.word} --- ↑"
 
         return [pre_block, *lines, post_block]
 

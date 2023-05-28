@@ -5,7 +5,7 @@ whisper_settings:
     #   openai-whisper
     #   whisper-timestamped
     #   stable-whisper
-    library: stable-whisper
+    library: openai-whisper
 
     # should be one of:
     #   null  (will use GPU if available)
@@ -25,6 +25,16 @@ whisper_settings:
     # These values changed per https://github.com/openai/whisper/discussions/29#discussioncomment-3726290
     no_speech_threshold: 0.30  # default 0.60
     logprob_threshold: null  # default -1.0
+
+vosk_settings:
+    # should be one of:
+    #   vosk-model-small-en-us-0.15
+    #   vosk-model-en-us-0.22-lgraph
+    #   vosk-model-en-us-0.22
+    #   vosk-model-en-us-0.42-gigaspeech
+    #
+    #   (see https://alphacephei.com/vosk/models for others)
+    model: vosk-model-en-us-0.22-lgraph
 
 étoile_settings:
     # should be one of
