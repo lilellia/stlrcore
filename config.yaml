@@ -36,6 +36,12 @@ vosk_settings:
     #   (see https://alphacephei.com/vosk/models for others)
     model: vosk-model-en-us-0.22-lgraph
 
+hoshi_settings:
+    # should be one of:
+    #   naive
+    #   assisted
+    reconciliation: assisted
+
 étoile_settings:
     # should be one of
     # json, audacity, audition
@@ -47,3 +53,4 @@ ui_themes:
     # https://ttkbootstrap.readthedocs.io/en/latest/themes/dark/
     stlr: darkly
     astral: cyborg
+    hoshi: darkly

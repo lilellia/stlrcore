@@ -1,7 +1,40 @@
+from difflib import SequenceMatcher
 from itertools import count
 from pathlib import Path
 import re
-from typing import Iterator
+from typing import Callable, Iterator, Sequence, TypeVar
+
+T = TypeVar("T")
+
+
+def diff_blocks(seq1: Sequence[T], seq2: Sequence[T], isjunk: Callable[[T], bool] | None = None, autojunk: bool = True) -> Iterator[tuple[Sequence[T], Sequence[T], Sequence[T]]]:
+    """Step through the two sequences, returning matching/unmatching subsequences."""
+    # initialise our pointers in seq1 (i) and seq2 (j)
+    i, j = 0, 0
+
+    for block in SequenceMatcher(isjunk, seq1, seq2, autojunk).get_matching_blocks():
+        unmatched_a = seq1[i:block.a]  # read up to this match
+        unmatched_b = seq2[j:block.b]  # read up to this match
+        matched = seq1[block.a:block.a+block.size]  # take the matching part
+
+        yield (unmatched_a, unmatched_b, matched)
+
+        # and update our pointers to the end of this match
+        i = block.a + block.size
+        j = block.b + block.size
+
+
+def diff_block_str(str1: str, str2: str, *, case_sensitive: bool = False, remove_punctuation: bool = True) -> Iterator[tuple[str, str, str]]:
+    def _transform(s: str, /) -> list[str]:
+        if not case_sensitive:
+            s = s.lower()
+        
+        words = s.split()
+
+        return [re.sub(r"[^a-zA-z]", "", w) for w in words] if remove_punctuation else words
+
+    for u, v, matched in diff_blocks(_transform(str1), _transform(str2)):
+        yield ' '.join(u), ' '.join(v), ' '.join(matched)
 
 
 def frange(start: float, stop: float | None = None, step: float | None = None) -> Iterator[float]:

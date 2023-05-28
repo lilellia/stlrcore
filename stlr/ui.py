@@ -1,12 +1,14 @@
-from itertools import chain
+from collections import defaultdict
+from itertools import chain, islice
 from pathlib import Path
+from stable_whisper.result import WordTiming
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, askopenfilenames
 import ttkbootstrap as ttkb  # type: ignore
-from typing import Any, Callable, Generic, Iterable, TypeVar
+from typing import Any, Callable, Generic, Iterable, Iterator, Literal, TypeVar
 
 from stlr.transcribe import Transcription
-from stlr.utils import truncate_path
+from stlr.utils import diff_block_str, truncate_path
 from stlr.vn import ATLImageGenerator, renpyify
 
 
@@ -14,8 +16,8 @@ T = TypeVar("T")
 
 
 class CEntry(ttkb.Entry):
-    def __init__(self, master: Any, *args: Any, **kwargs: Any) -> None:
-        self._var = tk.StringVar(master)
+    def __init__(self, master: Any, text: str = "", *args: Any, **kwargs: Any) -> None:
+        self._var = tk.StringVar(master, text)
         super().__init__(master, *args, textvariable=self._var, **kwargs)
 
     @property
@@ -240,3 +242,79 @@ class AstralApp(ttkb.Window):
         """Export the ATL to file."""
         with open(f"ATL-image-{self.image_name_box.text}.txt", "w", encoding="utf-8") as f:
             f.write(self.atl_box.text)
+
+class HoshiApp(ttkb.Window):
+    WHISPER_STYLE = "primary"
+    VOSK_STYLE = "danger"
+    MATCHING_STYLE = "success"
+
+    def __init__(self, master: Any, whisper_result: dict[str, Any], vosk_result: list[WordTiming], *args: Any, **kwargs: Any):
+        super().__init__(master, *args, **kwargs)
+        self.whisper_result = whisper_result
+        self.vosk_result = vosk_result
+
+        self.init_components(whisper_text=whisper_result["text"], vosk_text=" ".join(v.word for v in vosk_result))
+
+    def init_components(self, whisper_text: str, vosk_text: str) -> None:
+        grid_kw = dict(sticky="nsew", padx=10, pady=10)
+
+        ttkb.Button(self, text="whisper", bootstyle=self.WHISPER_STYLE).grid(row=0, column=0, **grid_kw)
+        ttkb.Button(self, text="vosk", bootstyle=self.VOSK_STYLE).grid(row=0, column=1, **grid_kw)
+
+        self.word_parts: dict[Literal["whisper", "vosk", "matching"], list[CEntry]] = {"whisper": [], "vosk": [], "matching": []}
+
+        for i, (whisper_only, vosk_only, matching) in enumerate(diff_block_str(whisper_text, vosk_text), start=1):
+            w = CEntry(self, text=whisper_only, width=60, bootstyle=self.WHISPER_STYLE)
+            w.grid(row=2*i, column=0, **grid_kw)
+            self.word_parts["whisper"].append(w)
+
+            v = CEntry(self, text=vosk_only, width=60, bootstyle=self.VOSK_STYLE)
+            v.grid(row=2*i, column=1, **grid_kw)
+            self.word_parts["vosk"].append(v)
+
+            m = CEntry(self, text=matching, width=80, bootstyle=self.MATCHING_STYLE)
+            m.grid(row=2*i+1, column=0, columnspan=2, **grid_kw)
+            self.word_parts["matching"].append(m)
+
+        self.update_button = ttkb.Button(self, text="Update", bootstyle="primary", command=self.update)
+        self.update_button.grid(row=2*i+2, column=0, columnspan=3, **grid_kw)
+
+    def _iter_rows(self) -> Iterator[tuple[str, str, str]]:
+        for whisper_entry, vosk_entry, matching_entry in zip(self.word_parts["whisper"], self.word_parts["vosk"], self.word_parts["matching"]):
+            yield whisper_entry.text, vosk_entry.text, matching_entry.text
+
+    def reconcile(self) -> Iterator[WordTiming]:
+        true_transcription = iter(self.whisper_result["text"].split())
+        timings = iter(self.vosk_result)
+
+        def _reconcile_one(whisper_phrase: str, vosk_phrase: str) -> Iterator[WordTiming]:
+            for whisper_segment, vosk_segment in zip(whisper_phrase.split(" / "), vosk_phrase.split(" / ")):
+                n_whisper = len(whisper_segment.split())
+                text = ' '.join(islice(true_transcription, n_whisper))
+                
+                if not (n_vosk := len(vosk_segment.split())):
+                    # number of word timings to strip out for this segment
+                    continue
+
+                vosk_words = tuple(islice(timings, n_vosk))
+                yield WordTiming(word=text, start=vosk_words[0].start, end=vosk_words[-1].end)
+
+        def _reconcile_matching(matching_phrase: str) -> Iterator[WordTiming]:
+            for _, word, timing in zip(matching_phrase.split(), true_transcription, timings):
+                yield WordTiming(word=word, start=timing.start, end=timing.end)
+
+        for whisper_phrase, vosk_phrase, matching_phrase in self._iter_rows():
+            yield from _reconcile_one(whisper_phrase, vosk_phrase)
+            yield from _reconcile_matching(matching_phrase)
+
+    def update(self) -> None:
+        words = list(self.reconcile())
+        self.whisper_result["segments"] = [
+            {
+                "start": min(w.start for w in words),
+                "end": max(w.end for w in words),
+                "words": words,
+                "text": self.whisper_result["text"]
+            }
+        ]
+        self.destroy()

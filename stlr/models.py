@@ -1,16 +1,19 @@
+from difflib import SequenceMatcher
 import json
 from loguru import logger
 from pathlib import Path
+from pprint import pprint
+import re
 import stable_whisper
 from stable_whisper.result import WordTiming
+from termcolor import colored
 from typing import Any, Protocol
 import vosk
 import wave
 import whisper
 import whisper_timestamped
 
-from stlr.audio_utils import load_audio
-from stlr.config import CONFIG
+import stlr
 
 # disable vosk's logging
 vosk.SetLogLevel(-1)
@@ -35,7 +38,7 @@ class OpenAIWhisper:
 
         return self.reconcile(whisper_result, vosk_result)
 
-    def _get_vosk_recognizer(self, audio: wave.Wave_read, model_name: str = CONFIG.vosk.model) -> vosk.KaldiRecognizer:
+    def _get_vosk_recognizer(self, audio: wave.Wave_read, model_name: str = stlr.config.CONFIG.vosk.model) -> vosk.KaldiRecognizer:
         model = vosk.Model(model_name=model_name)
 
         r = vosk.KaldiRecognizer(model, audio.getframerate())
@@ -44,8 +47,8 @@ class OpenAIWhisper:
 
         return r
 
-    def _vosk_transcribe(self, audio_file: str | Path, model_name: str = CONFIG.vosk.model) -> list[WordTiming]:
-        audio = load_audio(audio_file)
+    def _vosk_transcribe(self, audio_file: str | Path, model_name: str = stlr.config.CONFIG.vosk.model) -> list[WordTiming]:
+        audio = stlr.audio_utils.load_audio(audio_file)
         r = self._get_vosk_recognizer(audio, model_name)
 
         def _partial(result: Any) -> list[WordTiming]:
@@ -95,20 +98,28 @@ class OpenAIWhisper:
 
     @staticmethod
     def _reconcile_unmatching(whisper_result: dict[str, Any], vosk_result: list[WordTiming]) -> stable_whisper.WhisperResult:
-        """Resolve an unmatching pair of results by allowing vosk to supercede to form a single-segment result."""
-        resolved: dict[str, Any] = {
-            "language": whisper_result.get("language", "en"),
-            "segments": [
-                {
-                    "start": min(w.start for w in vosk_result),
-                    "end": max(w.end for w in vosk_result),
-                    "words": vosk_result,
-                    "text": " ".join(w.word for w in vosk_result)
-                }
-            ]
-        }
+        """Resolve an unmatching pair of results by allowing hoshi to intercede."""
 
-        return stable_whisper.WhisperResult(resolved)
+        if stlr.config.CONFIG.hoshi.reconciliation in {"naive", "naïve"}:
+            resolved: dict[str, Any] = {
+                "language": whisper_result.get("language", "en"),
+                "segments": [
+                    {
+                        "start": min(w.start for w in vosk_result),
+                        "end": max(w.end for w in vosk_result),
+                        "words": vosk_result,
+                        "text": " ".join(w.word for w in vosk_result)
+                    }
+                ]
+            }
+            
+            return stable_whisper.WhisperResult(resolved)
+        
+        # otherwise, perform assisted reconciliation
+        hoshi = stlr.ui.HoshiApp("星 hoshi", themename="darkly", whisper_result=whisper_result, vosk_result=vosk_result)
+        hoshi.mainloop()  # modifies whisper_result in place
+
+        return stable_whisper.WhisperResult(whisper_result)
 
 
 class StableWhisper:
