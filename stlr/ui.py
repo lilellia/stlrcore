@@ -1,15 +1,7 @@
-from collections import defaultdict
-from itertools import chain, islice
-from pathlib import Path
-from stable_whisper.result import WordTiming
 import tkinter as tk
-from tkinter.filedialog import askopenfilename, askopenfilenames
+from tkinter.filedialog import askopenfilename
 import ttkbootstrap as ttkb  # type: ignore
-from typing import Any, Callable, Generic, Iterable, Iterator, Literal, TypeVar
-
-from stlr.transcribe import Transcription
-from stlr.utils import diff_block_str, truncate_path
-from stlr.vn import ATLImageGenerator, renpyify
+from typing import Any, Callable, Generic, Iterable, TypeVar
 
 
 T = TypeVar("T")

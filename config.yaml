@@ -40,6 +40,7 @@ hoshi_settings:
     # should be one of:
     #   simple
     #   assisted
+    #   always-assisted
     reconciliation: assisted
 
 étoile_settings:

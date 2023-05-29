@@ -49,7 +49,11 @@ class OpenAIWhisper:
         def _partial(result: Any) -> list[WordTiming]:
             """Transcribe a section of audio, defined by the result str"""
             data = json.loads(result)
-            words = data["alternatives"][0]["result"]
+            try:
+                words = data["alternatives"][0]["result"]
+            except KeyError:
+                words: list[dict[str, Any]] = []
+            
             return [WordTiming(word=word["word"], start=word["start"], end=word["end"]) for word in words]
 
         result: list[WordTiming] = []
