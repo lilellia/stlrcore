@@ -124,7 +124,7 @@ class ATLImageGenerator:
             f"    # {self.transcription}",
             f"    # length: {self.transcription.duration:.2f} seconds",
             f"    # confidence: {self.transcription.confidence:.1%} (min: {self.transcription.min_confidence:.1%})",
-            f"    {self.closed_mouth.as_posix()}",
+            f"    \"{self.closed_mouth.as_posix()}\"",
             f"    {self.transcription.start}"
         ]
 
