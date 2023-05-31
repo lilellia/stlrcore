@@ -11,7 +11,7 @@ whisper_settings:
     #   null  (will use GPU if available)
     #   cpu
     device: null
-        
+
     # should be one of:
     #   base, large, large-v1, large-v2,
     #   tiny, small, medium,
@@ -42,6 +42,13 @@ hoshi_settings:
     #   assisted
     #   always-assisted
     reconciliation: assisted
+
+astral_settings:
+    # indentation settings for astral's ATL
+    # initial_indent = number of spaces indent for the "image ____" line
+    # additional_indent = number of spaces beyond that to indent the ATL
+    initial_indent: 4
+    additional_indent: 4
 
 étoile_settings:
     # should be one of

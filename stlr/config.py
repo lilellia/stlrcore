@@ -30,6 +30,12 @@ class HoshiSettings:
 
 
 @dataclass
+class AstralSettings:
+    initial_indent: int = 4
+    additional_indent: int = 4
+
+
+@dataclass
 class UIThemes:
     stlr: str
     astral: str
@@ -41,6 +47,7 @@ class Config:
     model: WhisperModel
     whisper: dict[str, Any]
     vosk: VoskModel
+    astral: AstralSettings
     hoshi: HoshiSettings
     étoile: ÉtoileSettings
     ui_themes: UIThemes
@@ -52,7 +59,15 @@ class Config:
 
         ws: dict[str, Any] = data["whisper_settings"]
         model_config = WhisperModel(name=ws.pop("model"), device=ws.pop("device"), library=ws.pop("library"))
-        return cls(model_config, ws, VoskModel(**data["vosk_settings"]), HoshiSettings(**data["hoshi_settings"]), ÉtoileSettings(**data["étoile_settings"]), UIThemes(**data["ui_themes"]))
+        return cls(
+            model_config,
+            ws,
+            VoskModel(**data["vosk_settings"]),
+            AstralSettings(**data["astral_settings"]),
+            HoshiSettings(**data["hoshi_settings"]),
+            ÉtoileSettings(**data["étoile_settings"]),
+            UIThemes(**data["ui_themes"])
+        )
 
 
 CONFIG = Config.load()
