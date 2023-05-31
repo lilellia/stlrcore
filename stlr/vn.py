@@ -2,6 +2,7 @@ from itertools import cycle
 from pathlib import Path
 from stable_whisper.result import WordTiming
 
+from stlr.config import CONFIG
 from stlr.transcribe import Transcription
 from stlr.utils import frange, get_space_prefix, read_leading_float
 
@@ -20,6 +21,14 @@ def renpyify(transcription: Transcription) -> str:
         f"{word.word}{wait_tag(wait)}"
         for word, wait in zip(transcription, waits)
     )
+
+
+def get_indents() -> tuple[str, str]:
+    """Determine the two necessary levels of indentation for ATL."""
+    initial = " " * CONFIG.astral.initial_indent
+    full = initial + " " * CONFIG.astral.additional_indent
+
+    return initial, full
 
 
 class ATLImageGenerator:
@@ -72,24 +81,27 @@ class ATLImageGenerator:
         lines: list[str] = []
         image: Path | None = None
 
+        _, indent = get_indents()
         for time, image in zip(frange(start, start+duration, time_step), self._images):
-            lines.append(f"    \"{image.as_posix()}\"")
+            lines.append(f"{indent}\"{image.as_posix()}\"")
 
             annotation = self.annotate(time, time + time_step, verbose=verbose)
-            delay_line = f"    {time_step:.3f}{annotation}"
+            delay_line = f"{indent}{time_step:.3f}{annotation}"
             lines.append(delay_line)
 
         if ensure_close and image != self.closed_mouth:
-            lines.append(f"    \"{next(self._images).as_posix()}\"")
+            lines.append(f"{indent}\"{next(self._images).as_posix()}\"")
 
         return lines, image
 
     def generate_atl(self, *, verbose: bool = True) -> str:
+        initial_indent, full_indent = get_indents()
+
         lines = [
-            f"image {self.image_name}:",
-            f"    # {self.transcription}",
-            f"    # length: {self.transcription.duration:.3f} seconds",
-            f"    # confidence: {self.transcription.confidence:.1%} (min: {self.transcription.min_confidence:.1%})"
+            f"{initial_indent}image {self.image_name}:",
+            f"{full_indent}# {self.transcription}",
+            f"{full_indent}# length: {self.transcription.duration:.3f} seconds",
+            f"{full_indent}# confidence: {self.transcription.confidence:.1%} (min: {self.transcription.min_confidence:.1%})"
         ]
 
         added_lines, _ = self.alternate_frames_for_duration(
@@ -113,25 +125,27 @@ class ATLImageGenerator:
         )
 
         # add delineating comments
-        pre_block = f"    # ↓ --- {word.word} (duration: {word.duration:.2f}s) --- ↓"
-        post_block = f"    # ↑ --- {word.word} --- ↑"
+        _, full_indent = get_indents()
+        pre_block = f"{full_indent}# ↓ --- {word.word} (duration: {word.duration:.2f}s) --- ↓"
+        post_block = f"{full_indent}# ↑ --- {word.word} --- ↑"
 
         return [pre_block, *lines, post_block]
 
     def generate_smart_atl(self, *, verbose: bool = True) -> str:
+        initial_indent, full_indent = get_indents()
         lines = [
-            f"image {self.image_name}:",
-            f"    # {self.transcription}",
-            f"    # length: {self.transcription.duration:.2f} seconds",
-            f"    # confidence: {self.transcription.confidence:.1%} (min: {self.transcription.min_confidence:.1%})",
-            f"    \"{self.closed_mouth.as_posix()}\"",
-            f"    {self.transcription.start}"
+            f"{initial_indent}image {self.image_name}:",
+            f"{full_indent}# {self.transcription}",
+            f"{full_indent}# length: {self.transcription.duration:.2f} seconds",
+            f"{full_indent}# confidence: {self.transcription.confidence:.1%} (min: {self.transcription.min_confidence:.1%})",
+            f"{full_indent}\"{self.closed_mouth.as_posix()}\"",
+            f"{full_indent}{self.transcription.start}"
         ]
 
         for word, wait in zip(self.transcription, self.transcription.waits):
             lines.extend(self._generate_smart_block(word, verbose=verbose))
             if wait:
-                lines.extend(["", f"    {wait:.3f}  # (pause)", ""])
+                lines.extend(["", f"{full_indent}{wait:.3f}  # (pause)", ""])
 
         return "\n".join(lines)
 
