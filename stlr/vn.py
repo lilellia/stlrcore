@@ -1,4 +1,6 @@
 from itertools import cycle
+from loguru import logger
+import math
 from pathlib import Path
 from stable_whisper.result import WordTiming
 
@@ -74,7 +76,7 @@ class ATLImageGenerator:
 
     def alternate_frames_for_duration(
             self,
-            duration: float, start: float, time_step: float = 0.2,
+            duration: float, start: float, time_step: float = CONFIG.astral.frame_length,
             *, ensure_close: bool = True, verbose: bool = True
     ) -> tuple[list[str], Path | None]:
         """Alternate open/closed frames for *at least* the given duration, returning the new lines and the last image used."""
@@ -94,7 +96,7 @@ class ATLImageGenerator:
 
         return lines, image
 
-    def generate_atl(self, *, verbose: bool = True) -> str:
+    def generate_fixed_aligned_atl(self, *, verbose: bool = True) -> str:
         initial_indent, full_indent = get_indents()
 
         lines = [
@@ -104,17 +106,35 @@ class ATLImageGenerator:
             f"{full_indent}# confidence: {self.transcription.confidence:.1%} (min: {self.transcription.min_confidence:.1%})"
         ]
 
-        added_lines, _ = self.alternate_frames_for_duration(
-            duration=self.transcription.duration,
-            start=0, time_step=0.2,
-            ensure_close=True, verbose=verbose
-        )
-        lines.extend(added_lines)
+        segments = self.transcription.get_segments(tolerance=CONFIG.astral.frame_length)
+
+        for segment in segments:
+            duration = math.ceil(segment.duration / CONFIG.astral.frame_length) * CONFIG.astral.frame_length
+            overstep = duration - segment.duration
+
+            logger.debug(f"segment: {segment.duration:.2f}s->{duration:.2f}s, {segment}")
+            added_lines, _ = self.alternate_frames_for_duration(
+                duration=duration,
+                start=segment.start,
+                time_step=CONFIG.astral.frame_length,
+                ensure_close=True,
+                verbose=verbose
+            )
+            lines.extend(added_lines)
+
+            if (wait := segment.wait_after - overstep) > 0:
+                logger.debug(f"{wait=}")
+                wait_lines = [
+                    "",
+                    f"{full_indent}{wait:.2f}  # pause",
+                    ""
+                ]
+                lines.extend(wait_lines)
 
         self._atl = "\n".join(lines)
         return self._atl
 
-    def _generate_smart_block(self, word: WordTiming, target_frame_time: float = 0.2, *, verbose: bool = True) -> list[str]:
+    def _generate_word_aligned_block(self, word: WordTiming, target_frame_time: float = CONFIG.astral.frame_length, *, verbose: bool = True) -> list[str]:
         # The actual length (in seconds) of each frame.
         #                               ↓ the "actual" number of frames, as close to target number
         frame_length = word.duration / max(round(word.duration / target_frame_time), 1)
@@ -131,7 +151,7 @@ class ATLImageGenerator:
 
         return [pre_block, *lines, post_block]
 
-    def generate_smart_atl(self, *, verbose: bool = True) -> str:
+    def generate_word_aligned_atl(self, *, verbose: bool = True) -> str:
         initial_indent, full_indent = get_indents()
         lines = [
             f"{initial_indent}image {self.image_name}:",
@@ -143,11 +163,19 @@ class ATLImageGenerator:
         ]
 
         for word, wait in zip(self.transcription, self.transcription.waits):
-            lines.extend(self._generate_smart_block(word, verbose=verbose))
+            lines.extend(self._generate_word_aligned_block(word, verbose=verbose))
             if wait:
                 lines.extend(["", f"{full_indent}{wait:.3f}  # (pause)", ""])
 
         return "\n".join(lines)
+
+    def generate_atl(self, *, alignment: str, verbose: bool = True) -> str:
+        lookup = {
+            "word alignment": self.generate_word_aligned_atl,
+            "fixed alignment": self.generate_fixed_aligned_atl
+        }
+
+        return lookup[alignment](verbose=verbose)
 
     def reannotate(self, atl: str, *, verbose: bool = True) -> str:
         lines: list[str] = []

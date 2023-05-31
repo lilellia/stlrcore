@@ -50,6 +50,14 @@ astral_settings:
     initial_indent: 4
     additional_indent: 4
 
+    # should be one of
+    # "fixed"  <-- means that om timings will always be the same, regardless of context
+    # "word"  <-- means that om timings will be adjusted to line up with word boundaries
+    alignment: fixed
+
+    # "om" length, treated as absolute with alignment:fixed and target with alignment:word
+    frame_length: 0.20
+
 étoile_settings:
     # should be one of
     # json, audacity, audition

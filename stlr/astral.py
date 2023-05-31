@@ -2,6 +2,7 @@ from pathlib import Path
 import ttkbootstrap as ttkb
 from typing import Any
 
+from stlr.config import CONFIG
 from stlr.transcribe import Transcription
 from stlr.ui import CDropdown, CEntry, CSwitch, CText, file_selection_row
 from stlr.utils import truncate_path
@@ -36,8 +37,9 @@ class AstralApp(ttkb.Window):
         self.full_image_path = CSwitch(self, text="Full Image Path", bootstyle="info.RoundToggle.Toolbutton")
         self.full_image_path.grid(row=2, column=3, **grid_kw)
 
-        self.let_astral_try = CSwitch(self, text="let astral-chan try ♥", bootstyle="info.RoundToggle.Toolbutton")
-        self.let_astral_try.grid(row=3, column=3, **grid_kw)
+        self.alignment_dropdown = CDropdown(self, options=("fixed alignment", "word alignment"), bootstyle="info")
+        self.alignment_dropdown.value = f"{CONFIG.astral.alignment} alignment"
+        self.alignment_dropdown.grid(row=3, column=3, **grid_kw)
 
         self.run_button = ttkb.Button(self, text="Generate ATL image code", command=self._generate_ATL)
         self.run_button.grid(row=7, column=0, columnspan=4, **grid_kw)
@@ -80,12 +82,12 @@ class AstralApp(ttkb.Window):
             closed_image
         )
 
-        if self.let_astral_try.checked:
+        if self.alignment_dropdown.value == "word alignment":
             # actually look at the transcription and try to line things up
-            self.atl_box.text = self.generator.generate_smart_atl(verbose=self.annotation_type.checked)
+            self.atl_box.text = self.generator.generate_word_aligned_atl(verbose=self.annotation_type.checked)
         else:
             # just do a naive 0.2 second alternating toggle
-            self.atl_box.text = self.generator.generate_atl(verbose=self.annotation_type.checked)
+            self.atl_box.text = self.generator.generate_fixed_aligned_atl(verbose=self.annotation_type.checked)
 
         self.export()
         self.update()

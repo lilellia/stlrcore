@@ -22,11 +22,11 @@ class CEntry(ttkb.Entry):
 
 
 class CDropdown(ttkb.OptionMenu, Generic[T]):
-    def __init__(self, master: Any, options: Iterable[T], mapfunc: Callable[[str], T] = str):
+    def __init__(self, master: Any, options: Iterable[T], mapfunc: Callable[[str], T] = str, **kwargs: Any):
         self._var = ttkb.StringVar(master)
         self.options = tuple(str(x) for x in options)
         self.mapfunc = mapfunc
-        super().__init__(master, self._var, self.options[0], *self.options)
+        super().__init__(master, self._var, self.options[0], *self.options, **kwargs)
 
     @property
     def value(self) -> T:

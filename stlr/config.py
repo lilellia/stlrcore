@@ -33,7 +33,8 @@ class HoshiSettings:
 class AstralSettings:
     initial_indent: int = 4
     additional_indent: int = 4
-
+    alignment: str = "fixed"
+    frame_length: float = 0.2
 
 @dataclass
 class UIThemes:

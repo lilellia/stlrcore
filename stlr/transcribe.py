@@ -2,6 +2,7 @@ import csv
 from dataclasses import asdict, dataclass
 from more_itertools import windowed
 import json
+from loguru import logger
 from pathlib import Path
 from stable_whisper import WhisperResult
 from stable_whisper.result import WordTiming
@@ -17,6 +18,29 @@ WHISPER_SETTINGS = CONFIG.whisper
 
 MODEL_MANAGER = ModelManager()
 
+
+@dataclass
+class Segment:
+    words: list[WordTiming]
+    wait_after: float | None = None
+
+    @property
+    def start(self) -> float:
+        return min(w.start for w in self.words)
+
+    @property
+    def end(self) -> float:
+        return max(w.end for w in self.words)
+
+    @property
+    def duration(self) -> float:
+        return self.end - self.start
+
+    def __iter__(self) -> Iterator[WordTiming]:
+        return iter(self.words)
+
+    def __str__(self) -> str:
+        return " ".join(w.word for w in self.words)
 
 class Transcription:
     def __init__(self, words: Iterable[WordTiming], *, model: str | None = None):
@@ -121,6 +145,25 @@ class Transcription:
 
     def __str__(self) -> str:
         return " ".join(t.word for t in self)
+
+    def get_segments(self, tolerance: float = 0.0) -> Iterator[Segment]:
+        """Group the words into segments of consecutive words without pauses."""
+        if len(self) < 2:
+            yield Segment(words=list(self))
+            return
+
+        words = iter(self)
+        block: list[WordTiming] = [self.transcription[0]]
+
+        for prev, curr in windowed(self, 2):
+            wait = curr.start - prev.end
+            if wait <= tolerance:
+                block.append(curr)
+            else:
+                yield Segment(words=block, wait_after=wait)
+                block = [curr]
+
+        yield Segment(words=block, wait_after=0)
 
     @property
     def waits(self) -> list[float]:
