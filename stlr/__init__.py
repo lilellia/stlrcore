@@ -1,5 +1,5 @@
 from . import (
-    astral, hoshi, stlr,
+    astral, hoshi, stlrapp,
     models, transcribe,
     audio_utils, utils, config, ui
 )

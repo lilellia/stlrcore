@@ -107,11 +107,11 @@ class Transcription:
     @property
     def confidence(self) -> float:
         """Return an overall confidence, the mean of all word confidences."""
-        return sum(t.probability for t in self) / len(self)
+        return sum((t.probability or 0.0) for t in self) / len(self)
 
     @property
     def min_confidence(self) -> float:
-        return min(t.probability for t in self)
+        return min((t.probability or 0.0) for t in self)
 
     def __iter__(self) -> Iterator[WordTiming]:
         return iter(self.transcription)

@@ -1,23 +1,24 @@
 from itertools import islice
 import re
 from stable_whisper import WhisperResult
-from stable_whisper.result import WordTiming 
+from stable_whisper.result import WordTiming
 import ttkbootstrap as ttkb
 from ttkbootstrap.scrolled import ScrolledFrame
-from typing import Any, Iterator, Literal
+from typing import Any, Callable, Iterator, Literal
 
 from stlr.config import CONFIG
 from stlr.ui import CEntry
 from stlr.utils import diff_block_str
 
 
-class HoshiAssistant(ttkb.Window):
+class HoshiAssistant(ttkb.Toplevel):
     WHISPER_STYLE = "primary"
     VOSK_STYLE = "danger"
     MATCHING_STYLE = "success"
 
-    def __init__(self, whisper_result: dict[str, Any], vosk_result: list[WordTiming], *args: Any, **kwargs: Any):
-        super().__init__("星 hoshi", themename=CONFIG.ui_themes.hoshi, *args, **kwargs)
+    def __init__(self, callback: Callable[[WhisperResult], None], whisper_result: dict[str, Any], vosk_result: list[WordTiming], *args: Any, **kwargs: Any):
+        super().__init__("星 hoshi", *args, **kwargs)
+        self.callback = callback
         self.whisper_result = whisper_result
         self.vosk_result = vosk_result
 
@@ -67,11 +68,11 @@ class HoshiAssistant(ttkb.Window):
             # form the segments by splitting on the slashes
             whisper_segments = re.split(r"\s*/\s*", whisper_phrase)
             vosk_segments = re.split(r"\s*/\s*", vosk_phrase)
-            
+
             for whisper_segment, vosk_segment in zip(whisper_segments, vosk_segments):
                 n_whisper = len(whisper_segment.split())
                 text = ' '.join(islice(true_transcription, n_whisper))
-                
+
                 if not (n_vosk := len(vosk_segment.split())):
                     # number of word timings to strip out for this segment
                     continue
@@ -98,6 +99,9 @@ class HoshiAssistant(ttkb.Window):
                 "text": self.whisper_result["text"]
             }
         ]
+
+        result = WhisperResult(self.whisper_result)
+        self.callback(result)
         self.destroy()
 
 
@@ -113,7 +117,7 @@ def _reconcile_equal_simple(whisper_result: dict[str, Any], vosk_result: list[Wo
 
 def _reconcile_unequal_simple(whisper_result: dict[str, Any], vosk_result: list[WordTiming]) -> WhisperResult:
     """Reconcile by just... ignoring whisper's transcription entirely."""
-    
+
     # create a single transcription segment from vosk's data,
     # then use it to overwrite the original segments data
     segment = {
@@ -122,17 +126,22 @@ def _reconcile_unequal_simple(whisper_result: dict[str, Any], vosk_result: list[
         "words": vosk_result,
         "text": " ".join(w.word for w in vosk_result)
     }
-    
+
     whisper_result["segments"] = [segment]
     return WhisperResult(whisper_result)
-    
+
 
 def _reconcile_assisted(whisper_result: dict[str, Any], vosk_result: list[WordTiming]) -> WhisperResult:
     """Reconcile by allowing the hoshi assistant to intercede."""
-    assistant = HoshiAssistant(whisper_result, vosk_result)
-    assistant.mainloop()  # modifies whisper_result in place
+    result: WhisperResult = None
+    def _callback(hoshi_result: WhisperResult) -> None:
+        nonlocal result
+        result = hoshi_result
 
-    return WhisperResult(whisper_result)
+    assistant = HoshiAssistant(_callback, whisper_result, vosk_result)
+    assistant.wait_window()
+
+    return result
 
 
 def reconcile(whisper_result: dict[str, Any], vosk_result: list[WordTiming], *, mode: str = "assisted") -> WhisperResult:

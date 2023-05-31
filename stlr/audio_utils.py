@@ -10,10 +10,11 @@ import wave
 def convert_to_wav(audio_file: str | Path) -> Path:
     """Convert the given audio file to WAV mono PCM, returning the new path."""
     dest = Path(audio_file).with_suffix(".wav")
-    
+
     audio = pydub.AudioSegment.from_file(audio_file)
     audio.export(dest, format="wav", parameters=("-ac", "1"))
 
+    logger.sucess(f"conversion successful: {dest}")
     return dest
 
 
