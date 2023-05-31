@@ -62,6 +62,16 @@ class CText(ttkb.ScrolledText):
         self.insert("1.0", text)
 
 
+class CToplevel(ttkb.Toplevel, Generic[T]):
+    def result(self) -> T | None:
+        """Get the "return value" from a Toplevel window. The window should determine this by setting self._result."""
+        self.wait_window()
+        try:
+            return self._result
+        except AttributeError:
+            return None
+
+
 def file_selection_row(master: Any, row: int, label_text: str, button_text: str = "Select File", grid_kw: dict[str, Any] | None = None) -> tuple[CEntry, ttkb.Button]:
     def _select_file() -> None:
         entry.text = askopenfilename()

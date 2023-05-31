@@ -7,18 +7,17 @@ from ttkbootstrap.scrolled import ScrolledFrame
 from typing import Any, Callable, Iterator, Literal
 
 from stlr.config import CONFIG
-from stlr.ui import CEntry
+from stlr.ui import CEntry, CToplevel
 from stlr.utils import diff_block_str
 
 
-class HoshiAssistant(ttkb.Toplevel):
+class HoshiAssistant(CToplevel):
     WHISPER_STYLE = "primary"
     VOSK_STYLE = "danger"
     MATCHING_STYLE = "success"
 
-    def __init__(self, callback: Callable[[WhisperResult], None], whisper_result: dict[str, Any], vosk_result: list[WordTiming], *args: Any, **kwargs: Any):
+    def __init__(self, whisper_result: dict[str, Any], vosk_result: list[WordTiming], *args: Any, **kwargs: Any):
         super().__init__("星 hoshi", *args, **kwargs)
-        self.callback = callback
         self.whisper_result = whisper_result
         self.vosk_result = vosk_result
 
@@ -100,8 +99,8 @@ class HoshiAssistant(ttkb.Toplevel):
             }
         ]
 
-        result = WhisperResult(self.whisper_result)
-        self.callback(result)
+        # Assign result so that it can be accessed externally via .result()
+        self._result = WhisperResult(self.whisper_result)
         self.destroy()
 
 
@@ -133,15 +132,8 @@ def _reconcile_unequal_simple(whisper_result: dict[str, Any], vosk_result: list[
 
 def _reconcile_assisted(whisper_result: dict[str, Any], vosk_result: list[WordTiming]) -> WhisperResult:
     """Reconcile by allowing the hoshi assistant to intercede."""
-    result: WhisperResult = None
-    def _callback(hoshi_result: WhisperResult) -> None:
-        nonlocal result
-        result = hoshi_result
-
-    assistant = HoshiAssistant(_callback, whisper_result, vosk_result)
-    assistant.wait_window()
-
-    return result
+    assistant = HoshiAssistant(whisper_result, vosk_result)
+    return assistant.result()
 
 
 def reconcile(whisper_result: dict[str, Any], vosk_result: list[WordTiming], *, mode: str = "assisted") -> WhisperResult:
