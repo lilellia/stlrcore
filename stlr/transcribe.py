@@ -22,7 +22,7 @@ MODEL_MANAGER = ModelManager()
 @dataclass
 class Segment:
     words: list[WordTiming]
-    wait_after: float | None = None
+    wait_after: float
 
     @property
     def start(self) -> float:
@@ -149,7 +149,7 @@ class Transcription:
     def get_segments(self, tolerance: float = 0.0) -> Iterator[Segment]:
         """Group the words into segments of consecutive words without pauses."""
         if len(self) < 2:
-            yield Segment(words=list(self))
+            yield Segment(words=list(self), wait_after=0)
             return
 
         words = iter(self)
