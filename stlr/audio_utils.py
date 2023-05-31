@@ -14,7 +14,7 @@ def convert_to_wav(audio_file: str | Path) -> Path:
     audio = pydub.AudioSegment.from_file(audio_file)
     audio.export(dest, format="wav", parameters=("-ac", "1"))
 
-    logger.sucess(f"conversion successful: {dest}")
+    logger.success(f"conversion successful: {dest}")
     return dest
 
 
