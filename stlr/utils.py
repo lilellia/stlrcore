@@ -1,8 +1,8 @@
 from difflib import SequenceMatcher
-from itertools import count
+from itertools import count, tee
 from pathlib import Path
 import re
-from typing import Callable, Iterator, Sequence, TypeVar
+from typing import Callable, Iterable, Iterator, Sequence, TypeVar
 
 T = TypeVar("T")
 
@@ -28,7 +28,7 @@ def diff_block_str(str1: str, str2: str, *, case_sensitive: bool = False, remove
     def _transform(s: str, /) -> list[str]:
         if not case_sensitive:
             s = s.lower()
-        
+
         words = s.split()
 
         return [re.sub(r"[^a-zA-z]", "", w) for w in words] if remove_punctuation else words
@@ -66,6 +66,13 @@ def truncate_path(path: Path, highest_parent: str) -> Path:
         return Path(match.group(1))
 
     raise ValueError(f"cannot truncate {path} to {highest_parent}")
+
+
+def pairwise(s: Iterable[T]) -> Iterator[tuple[T, T]]:
+    """s -> (s0, s1), (s1, s2), (s2, s3), ..."""
+    a, b = tee(s)
+    next(b, None)
+    yield from zip(a, b)
 
 
 def read_leading_float(s: str, /) -> float | None:

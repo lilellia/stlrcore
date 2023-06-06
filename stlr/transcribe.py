@@ -1,8 +1,6 @@
+from attrs import asdict, define
 import csv
-from dataclasses import asdict, dataclass
-from more_itertools import windowed
 import json
-from loguru import logger
 from pathlib import Path
 from stable_whisper import WhisperResult
 from stable_whisper.result import WordTiming
@@ -11,7 +9,7 @@ from typing import Any, Iterable, Iterator, Literal
 
 from stlr.config import CONFIG
 from stlr.models import ModelManager
-from stlr.utils import seconds_to_hms
+from stlr.utils import pairwise, seconds_to_hms
 
 MODEL_SETTINGS = CONFIG.model
 WHISPER_SETTINGS = CONFIG.whisper
@@ -19,7 +17,7 @@ WHISPER_SETTINGS = CONFIG.whisper
 MODEL_MANAGER = ModelManager()
 
 
-@dataclass
+@define
 class Segment:
     words: list[WordTiming]
     wait_after: float
@@ -41,6 +39,7 @@ class Segment:
 
     def __str__(self) -> str:
         return " ".join(w.word for w in self.words)
+
 
 class Transcription:
     def __init__(self, words: Iterable[WordTiming], *, model: str | None = None):
@@ -152,10 +151,9 @@ class Transcription:
             yield Segment(words=list(self), wait_after=0)
             return
 
-        words = iter(self)
         block: list[WordTiming] = [self.transcription[0]]
 
-        for prev, curr in windowed(self, 2):
+        for prev, curr in pairwise(self):
             wait = curr.start - prev.end
             if wait <= tolerance:
                 block.append(curr)
@@ -172,9 +170,7 @@ class Transcription:
             return []
 
         waits: list[float] = []
-        for a, b in windowed(self, 2):
-            assert a is not None
-            assert b is not None
+        for a, b in pairwise(self):
             waits.append(b.start - a.end)
 
         return waits + [0]  # no wait after last word
