@@ -5,7 +5,7 @@ whisper_settings:
     #   openai-whisper
     #   whisper-timestamped
     #   stable-whisper
-    library: openai-whisper
+    library: whisper-timestamped
 
     # should be one of:
     #   null  (will use GPU if available)
@@ -41,7 +41,7 @@ hoshi_settings:
     #   simple
     #   assisted
     #   always-assisted
-    reconciliation: assisted
+    reconciliation: always-assisted
 
 astral_settings:
     # indentation settings for astral's ATL
