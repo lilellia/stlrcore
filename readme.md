@@ -23,10 +23,9 @@ Select an audio file, as well as the two image files, then press "Generate ATL".
 - *Full Image Paths* — when checked, enter the image filenames into the ATL exactly as they appear in the textboxes. When unchecked, trim to `images/...`.
 - *let astral-chan try ♥* — when checked, use astral's "smart" ATL generation to make sure the animations line up as best as she can. when unchecked, simply alternate open/closed images every 0.2 seconds for the entire duration of the audio
 
+### ※ selene.py
 
-### ※ impatient.py
-`impatient.py` is designed to remove all Ren'Py `{w=...}` wait tags from a script.
-
+`selene.py` is designed to create subtitles for an audio file. Currently only supports exporting as .srt, but will be developed to include hard subtitles as well.
 
 ### ※ étoile.py
 

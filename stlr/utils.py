@@ -89,11 +89,11 @@ def get_space_prefix(s: str, /) -> str:
     raise ValueError(f"cannot read space prefix for {s!r}")
 
 
-def seconds_to_hms(seconds: float) -> str:
+def seconds_to_hms(seconds: float, *, omit_hour: bool = True) -> str:
     minutes, seconds = divmod(seconds, 60)
     hours, minutes = divmod(minutes, 60)
 
-    if hours:
+    if hours and not omit_hour:
         # H:MM:SS.SSS
         return f"{hours:.0f}:{minutes:02.0f}:{seconds:06.3f}"
 

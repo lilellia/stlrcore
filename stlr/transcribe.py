@@ -1,4 +1,5 @@
 from attrs import asdict, define
+import dataclasses
 import csv
 import json
 from pathlib import Path
@@ -9,7 +10,7 @@ from typing import Any, Iterable, Iterator, Literal
 
 from stlr.config import CONFIG
 from stlr.models import ModelManager
-from stlr.utils import pairwise, seconds_to_hms
+from stlr.utils import diff_blocks, pairwise, seconds_to_hms
 
 MODEL_SETTINGS = CONFIG.model
 WHISPER_SETTINGS = CONFIG.whisper
@@ -38,7 +39,7 @@ class Segment:
         return iter(self.words)
 
     def __str__(self) -> str:
-        return " ".join(w.word for w in self.words)
+        return " ".join(w.word.strip() for w in self.words)
 
 
 class Transcription:
@@ -143,7 +144,7 @@ class Transcription:
         return len(self.transcription)
 
     def __str__(self) -> str:
-        return " ".join(t.word for t in self)
+        return " ".join(t.word.strip() for t in self)
 
     def get_segments(self, tolerance: float = 0.0) -> Iterator[Segment]:
         """Group the words into segments of consecutive words without pauses."""
@@ -162,6 +163,19 @@ class Transcription:
                 block = [curr]
 
         yield Segment(words=block, wait_after=0)
+
+    def get_fragment(self, fragment: str) -> Segment:
+        """Determine the timing of a particular fragment of the transcription's text."""
+        g = diff_blocks(self.words, fragment.split())
+        head, _, match = next(g)
+        i = len(head)
+        n = len(match)
+
+        return Segment(words=list(self)[i:i+n], wait_after=0)
+
+    @property
+    def words(self) -> list[str]:
+        return [w.word.strip() for w in self]
 
     @property
     def waits(self) -> list[float]:
@@ -189,7 +203,7 @@ class Transcription:
         data = {
             "model": self.model,
             "text": str(self),
-            "words": [asdict(word) for word in self]
+            "words": [dataclasses.asdict(word) for word in self]
         }
         filestem.with_suffix(suffix).write_text(json.dumps(data, indent=4), encoding="utf-8")
 

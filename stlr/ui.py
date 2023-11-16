@@ -37,6 +37,22 @@ class CDropdown(ttkb.OptionMenu, Generic[T]):
         self._var.set(str(val))
 
 
+class CCombobox(ttkb.Combobox, Generic[T]):
+    def __init__(self, master: Any, options: Iterable[T], mapfunc: Callable[[str], T] = str, **kwargs: Any):
+        self._var = ttkb.StringVar(master)
+        self.options = tuple(str(x) for x in options)
+        self.mapfunc = mapfunc
+        super().__init__(master, textvariable=self._var, values=self.options, **kwargs)
+
+    @property
+    def value(self) -> T:
+        return self.mapfunc(self._var.get())
+
+    @value.setter
+    def value(self, val: T) -> None:
+        self._var.set(str(val))
+
+
 class CSwitch(ttkb.Checkbutton):
     def __init__(self, master: Any, *args: Any, **kwargs: Any) -> None:
         self._var = tk.IntVar(master)
