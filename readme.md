@@ -34,8 +34,22 @@ Select an audio file, as well as the two image files, then press "Generate ATL".
 
 ## Installation
 
-After cloning this repository, simply run
+1. Ensure that FFmpeg is installed and available on your system path.
 
 ```sh
-python3 -m pip install ttkbootstrap loguru more-itertools pyyaml tabulate[wide-chars] git+https://github.com/jianfch/stable-ts.git
+$ ffmpeg -version | head -1
+```
+
+should display something like
+`ffmpeg version 4.4.2-0ubuntu0.22.04.1 Copyright (c) 2000-2021 the FFmpeg developers`
+
+2. Clone or download this repository.
+
+3. After cloning this repository, simply run
+
+```sh
+$ python3 -m pip install \
+    attrs ttkbootstrap loguru pyyaml vosk pydub tabulate[wide-chars] \
+    git+https://github.com/jianfch/stable-ts.git \
+    git+https://github.com/linto-ai/whisper-timestamped
 ```

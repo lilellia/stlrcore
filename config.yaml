@@ -5,7 +5,7 @@ whisper_settings:
     #   openai-whisper
     #   whisper-timestamped
     #   stable-whisper
-    library: stable-whisper
+    library: whisper-timestamped
 
     # should be one of:
     #   null  (will use GPU if available)
