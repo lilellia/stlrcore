@@ -1,3 +1,6 @@
+import os
+import platform
+import subprocess
 from difflib import SequenceMatcher
 from itertools import count, tee
 import logging
@@ -129,3 +132,23 @@ class CTextLogHandler(logging.Handler):
 
         # required since we can't modify the sink from other threads
         self.sink.after(ms=0, func=append_to_log)
+
+
+def open_file(path: Path) -> None:
+    """Instruct the operating system to open a file as if it were double-clicked from the file manager.
+    Behaviour is different based on operating system.
+
+    - Windows uses os.startfile
+    - MacOS uses "open $FILE"
+    - Linux uses "xdg-open $FILE"
+    """
+    system = platform.system()
+
+    if system == "Windows":
+        os.startfile(path)
+        return
+
+    # MacOS:    open $FILE
+    # Linux:    xdg-open $FILE
+    cmd = ("open" if system == "Darwin" else "xdg-open", path)
+    subprocess.run(cmd)

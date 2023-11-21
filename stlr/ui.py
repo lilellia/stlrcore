@@ -1,4 +1,3 @@
-import logging
 import tkinter as tk
 from tkinter.filedialog import askopenfilename
 import ttkbootstrap as ttkb  # type: ignore
@@ -91,6 +90,11 @@ class CToplevel(ttkb.Toplevel, Generic[T]):
             return self._result
         except AttributeError:
             return None
+
+    def return_(self, value: T) -> None:
+        """Set the return value of the window and destroy it."""
+        self._result = value
+        self.destroy()
 
 
 def file_selection_row(master: Any, row: int, label_text: str, button_text: str = "Select File", grid_kw: dict[str, Any] | None = None) -> tuple[CEntry, ttkb.Button]:
