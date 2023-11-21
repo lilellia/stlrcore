@@ -1,3 +1,4 @@
+import logging
 import tkinter as tk
 from tkinter.filedialog import askopenfilename
 import ttkbootstrap as ttkb  # type: ignore
@@ -76,6 +77,10 @@ class CText(ttkb.ScrolledText):
     def text(self, text: str) -> None:
         self.delete("1.0", "end")
         self.insert("1.0", text)
+
+    def write(self, text, *, end: str = "") -> None:
+        """Append the given text to the end of the textbox."""
+        self.insert("end", text + end)
 
 
 class CToplevel(ttkb.Toplevel, Generic[T]):

@@ -1,8 +1,12 @@
 from difflib import SequenceMatcher
 from itertools import count, tee
+import logging
 from pathlib import Path
 import re
+import tkinter as tk
 from typing import Callable, Iterable, Iterator, Sequence, TypeVar
+
+from stlr.ui import CText
 
 T = TypeVar("T")
 
@@ -89,9 +93,13 @@ def get_space_prefix(s: str, /) -> str:
     raise ValueError(f"cannot read space prefix for {s!r}")
 
 
-def seconds_to_hms(seconds: float, *, omit_hour: bool = True) -> str:
+def seconds_to_hms(seconds: float, *, omit_hour: bool = True, srt_format: bool = False) -> str:
     minutes, seconds = divmod(seconds, 60)
     hours, minutes = divmod(minutes, 60)
+
+    if srt_format:
+        # SRT requires HH:MM:SS,fff
+        return f"{hours:02.0f}:{minutes:02.0f}:{seconds:06.3f}".replace(".", ",")
 
     if hours and not omit_hour:
         # H:MM:SS.SSS
@@ -99,3 +107,25 @@ def seconds_to_hms(seconds: float, *, omit_hour: bool = True) -> str:
 
     # M:SS.SSS
     return f"{minutes:.0f}:{seconds:06.3f}"
+
+
+class CTextLogHandler(logging.Handler):
+    """A custom log handler designed to log to a CText object.
+
+    https://stackoverflow.com/a/41959785
+    """
+    def __init__(self, sink: CText):
+        logging.Handler.__init__(self)
+        self.sink = sink
+
+    def emit(self, record: logging.LogRecord) -> None:
+        message = self.format(record)
+
+        def append_to_log():
+            self.sink.configure(state="normal")
+            self.sink.write(message, end="\n")
+            self.sink.configure(state="disabled")
+            self.sink.yview(tk.END)
+
+        # required since we can't modify the sink from other threads
+        self.sink.after(ms=0, func=append_to_log)

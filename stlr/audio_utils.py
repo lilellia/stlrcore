@@ -1,10 +1,39 @@
+import ffmpeg
+import json
 from loguru import logger
 from pathlib import Path
 import pydub
 import re
 import subprocess
-from typing import Iterator
+from typing import Iterator, Any
 import wave
+
+
+def is_audio_only(media_file: str | Path) -> bool:
+    """Determine whether the given media file has any non-audio streams."""
+    try:
+        data = ffmpeg.probe(media_file)
+    except ffmpeg.Error:
+        raise ValueError(f"{media_file} is not a media file")
+
+    for stream in data["streams"]:
+        if stream["codec_type"] != "audio":
+            return False
+
+    return True
+
+
+def audio_only(media_file: str | Path) -> Path:
+    """Convert a media file to one which is audio-only."""
+    if is_audio_only(media_file):
+        return Path(media_file)
+
+    logger.info(f"{media_file} is not audio-only. Converting to wav...")
+    ifile = ffmpeg.input(media_file)
+    dest = media_file.with_suffix("-audio.wav")
+    ffmpeg.overwrite_output(ifile.audio, dest)
+
+    return dest
 
 
 def convert_to_wav(audio_file: str | Path) -> Path:

@@ -1,12 +1,11 @@
 from itertools import islice
 import re
 from stable_whisper import WhisperResult
-from stable_whisper.result import WordTiming
 import ttkbootstrap as ttkb
 from ttkbootstrap.scrolled import ScrolledFrame
-from typing import Any, Callable, Iterator, Literal
+from typing import Any, Iterator, Literal
 
-from stlr.config import CONFIG
+from stlr.transcribe import Transcription, WordTiming
 from stlr.ui import CEntry, CToplevel
 from stlr.utils import diff_block_str
 
@@ -34,6 +33,7 @@ class HoshiAssistant(CToplevel):
 
         self.word_parts: dict[Literal["whisper", "vosk", "matching"], list[CEntry]] = {"whisper": [], "vosk": [], "matching": []}
 
+        rows = 0
         for i, (whisper_only, vosk_only, matching) in enumerate(diff_block_str(whisper_text, vosk_text), start=1):
             w = CEntry(frame, text=whisper_only, width=60, bootstyle=self.WHISPER_STYLE)
             w.grid(row=2*i, column=0, **grid_kw)
@@ -47,8 +47,10 @@ class HoshiAssistant(CToplevel):
             m.grid(row=2*i+1, column=0, columnspan=2, **grid_kw)
             self.word_parts["matching"].append(m)
 
+            rows += 1
+
         self.update_button = ttkb.Button(frame, text="Update", bootstyle="primary", command=self.update)
-        self.update_button.grid(row=2*i+2, column=0, columnspan=3, **grid_kw)
+        self.update_button.grid(row=2*rows+2, column=0, columnspan=3, **grid_kw)
 
         sf.pack(fill="both", expand=True)
 
@@ -89,54 +91,35 @@ class HoshiAssistant(CToplevel):
             yield from _reconcile_matching(matching_phrase)
 
     def update(self) -> None:
-        words = list(self.reconcile())
-        self.whisper_result["segments"] = [
-            {
-                "start": min(w.start for w in words),
-                "end": max(w.end for w in words),
-                "words": words,
-                "text": self.whisper_result["text"]
-            }
-        ]
-
-        # Assign result so that it can be accessed externally via .result()
-        self._result = WhisperResult(self.whisper_result)
+        """Assign reconciliation result so that it can be accessed externally, then close."""
+        self._result = self.reconcile()
         self.destroy()
 
 
-def _reconcile_equal_simple(whisper_result: dict[str, Any], vosk_result: list[WordTiming]) -> WhisperResult:
+def _reconcile_equal_simple(whisper_result: dict[str, Any], vosk_result: list[WordTiming]) -> Transcription:
     """Construct a WhisperResult by combining the timing results from vosk with the untimed transcriptions from whisper."""
     vosk_words = iter(vosk_result)
 
+    word_timings: list[WordTiming] = []
     for segment in whisper_result["segments"]:
         whisper_words = segment["text"].split()
-        segment["words"] = [v for v, _ in zip(vosk_words, whisper_words)]
+        word_timings.extend(v for v, _ in zip(vosk_words, whisper_words))
 
-    return WhisperResult(whisper_result)
+    return Transcription(word_timings)
 
-def _reconcile_unequal_simple(whisper_result: dict[str, Any], vosk_result: list[WordTiming]) -> WhisperResult:
+
+def _reconcile_unequal_simple(whisper_result: dict[str, Any], vosk_result: list[WordTiming]) -> Transcription:
     """Reconcile by just... ignoring whisper's transcription entirely."""
-
-    # create a single transcription segment from vosk's data,
-    # then use it to overwrite the original segments data
-    segment = {
-        "start": min(w.start for w in vosk_result),
-        "end": max(w.end for w in vosk_result),
-        "words": vosk_result,
-        "text": " ".join(w.word for w in vosk_result)
-    }
-
-    whisper_result["segments"] = [segment]
-    return WhisperResult(whisper_result)
+    return vosk_result
 
 
-def _reconcile_assisted(whisper_result: dict[str, Any], vosk_result: list[WordTiming]) -> WhisperResult:
+def _reconcile_assisted(whisper_result: dict[str, Any], vosk_result: list[WordTiming]) -> Transcription:
     """Reconcile by allowing the hoshi assistant to intercede."""
     assistant = HoshiAssistant(whisper_result, vosk_result)
     return assistant.result()
 
 
-def reconcile(whisper_result: dict[str, Any], vosk_result: list[WordTiming], *, mode: str = "assisted") -> WhisperResult:
+def reconcile(whisper_result: dict[str, Any], vosk_result: list[WordTiming], *, mode: str = "assisted") -> Transcription:
     nwords_whisper = len(whisper_result["text"].split())
     nwords_vosk = len(vosk_result)
 
