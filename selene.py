@@ -1,13 +1,13 @@
+from attrs import define
 from loguru import logger
-import os
 from pathlib import Path
 import tkinter.font
 import ttkbootstrap as ttkb
 
 from stlr.audio_utils import audio_only, is_audio_only
 from stlr.transcribe import Segment, Transcription, WordTiming
-from stlr.ui import CText, CToplevel, file_selection_row
-from stlr.utils import CTextLogHandler, open_file
+from stlr.ui import CCombobox, CEntry, CText, CToplevel, file_selection_row
+from stlr.utils import CTextLogHandler
 
 
 def get_system_fonts() -> list[str]:
@@ -16,6 +16,15 @@ def get_system_fonts() -> list[str]:
 
 
 GRID_KW = dict(sticky="nsew", padx=10, pady=10)
+
+
+@define
+class SubtitleConfig:
+    bounding_box: tuple[int, int, int, int]
+    font: str
+    fontsize: int
+    start_time: float
+    end_time: float
 
 
 class Selene(ttkb.Window):
@@ -59,18 +68,25 @@ def run(media_file: Path) -> None:
     logger.success("Transcription generated.")
 
     # Step 2: Get segments
-    segments: list[WordTiming] = user_split_transcription(transcription)
+    word_timings = user_split_transcription(transcription)
     logger.success("Segments confirmed.")
 
     # Step 3: Correct transcriptions
-    segments: list[Segment] = user_correct_transcription(segments)
+    segments = user_correct_transcription(word_timings)
     logger.success("Corrections confirmed.")
 
     # Step 4: Output to SRT
     dest = media_file.with_suffix(".srt")
     Transcription.write_srt(segments, dest=dest)
     logger.success(f"SRT file written: {dest}")
-    open_file(dest)
+
+    # Step 5: Get subtitle configuration
+    while (config := get_subtitle_config()) is None:
+        logger.error("Configuration not processed. Try again.")
+
+    # Step 6: Start building
+
+    print(config)
 
 
 def user_split_transcription(transcription: Transcription) -> list[WordTiming]:
@@ -103,7 +119,7 @@ def user_split_transcription(transcription: Transcription) -> list[WordTiming]:
 
 def user_correct_transcription(segments: list[WordTiming]) -> list[Segment]:
     """Have the user correct errors, punctuation, etc. in the transcriptions."""
-    window: CToplevel[list[WordTiming]] = CToplevel(title="Σελήνη: Correct Transcription")
+    window: CToplevel[list[Segment]] = CToplevel(title="Σελήνη: Correct Transcription")
 
     message = "Make any edits to the transcription, including spelling or punctuation.\nDo NOT edit any line breaks."
     ttkb.Label(window, text=message) \
@@ -128,33 +144,75 @@ def user_correct_transcription(segments: list[WordTiming]) -> list[Segment]:
 
     return window.result() or []
 
-#     # Correct spellings, etc.
-#     message = """
-# Step 3: Now that the "screen" timings are set, fix or edit any transcription errors, including corrections to spelling or punctuation.
-# As before, this will open a text editor.
-#
-# (Press ENTER to continue.)
-# """
-#     input(message)
-#
-#     initial_text = "\n".join(segment.word for segment in segments)
-#     new_segments = get_long_text(initial_text)
-#
-#     segments = [
-#         # update the text
-#         WordTiming(word=line.strip(), start=s.start, end=s.end)
-#         for line, s in zip(new_segments.splitlines(), segments)
-#     ]
-#
-#     # Convert to "actual" segment objects
-#     segments = [Segment([s], wait_after=0.0) for s in segments]
-#
-#     # Output .srt
-#     dest = audio_file.with_suffix(".srt")
-#     Transcription.write_srt(segments, dest=dest)
-#
-#     if confirm(f"Subtitles written to {dest}. Show them?"):
-#         print(dest.read_text())
+
+def get_subtitle_config() -> SubtitleConfig | None:
+    window: CToplevel[SubtitleConfig] = CToplevel(title="Σελήνη: Subtitle Configuration")
+
+    # Subtitle bounding box
+    ttkb.Label(window, text="Subtitle bounding box") \
+        .grid(row=1, column=0, **GRID_KW)
+
+    bbox_x_entry = CEntry(window, text="(x)", converter=int, validator=(0).__lt__)
+    bbox_x_entry.grid(row=1, column=1, **GRID_KW)
+
+    bbox_y_entry = CEntry(window, text="(y)", converter=int, validator=(0).__lt__)
+    bbox_y_entry.grid(row=1, column=2, **GRID_KW)
+
+    bbox_w_entry = CEntry(window, text="(width)", converter=int, validator=(0).__lt__)
+    bbox_w_entry.grid(row=1, column=3, **GRID_KW)
+
+    bbox_h_entry = CEntry(window, text="(height)", converter=int, validator=(0).__lt__)
+    bbox_h_entry.grid(row=1, column=4, **GRID_KW)
+
+    # Font selector
+    ttkb.Label(window, text="Subtitle font") \
+        .grid(row=2, column=0, **GRID_KW)
+
+    font_selector = CCombobox(window, options=get_system_fonts())
+    font_selector.grid(row=2, column=1, columnspan=2, **GRID_KW)
+
+    # Font size
+    ttkb.Label(window, text="Font size (pt)") \
+        .grid(row=2, column=3, **GRID_KW)
+
+    fontsize_entry = CEntry(window, converter=int, validator=(0).__lt__)
+    fontsize_entry.grid(row=2, column=4, **GRID_KW)
+
+    # Start and end times
+    ttkb.Label(window, text="Start time (seconds)") \
+        .grid(row=3, column=0, **GRID_KW)
+
+    start_time_entry = CEntry(window, text="0.0", converter=float, validator=(0.0).__lt__)
+    start_time_entry.grid(row=3, column=1, **GRID_KW)
+
+    ttkb.Label(window, text="End time (seconds)") \
+        .grid(row=3, column=2, **GRID_KW)
+
+    end_time_entry = CEntry(window, text="inf", converter=float, validator=(0.0).__lt__)
+    end_time_entry.grid(row=3, column=3, **GRID_KW)
+
+    def interpret():
+        bounding_box = (bbox_x_entry.value, bbox_y_entry.value, bbox_w_entry.value, bbox_h_entry.value)
+        font = font_selector.value
+        fontsize = fontsize_entry.value
+
+        start_time = start_time_entry.value
+        end_time = end_time_entry.value
+
+        config = SubtitleConfig(
+            bounding_box=bounding_box,
+            font=font,
+            fontsize=fontsize,
+            start_time=start_time,
+            end_time=end_time
+        )
+        print(config)
+        window.return_(config)
+
+    ttkb.Button(window, text="Generate", command=interpret) \
+        .grid(row=100, column=0, columnspan=5, **GRID_KW)
+
+    return window.result()
 
 
 if __name__ == "__main__":

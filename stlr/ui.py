@@ -7,10 +7,20 @@ from typing import Any, Callable, Generic, Iterable, TypeVar
 T = TypeVar("T")
 
 
-class CEntry(ttkb.Entry):
-    def __init__(self, master: Any, text: str = "", *args: Any, **kwargs: Any) -> None:
+class CEntry(ttkb.Entry, Generic[T]):
+    def __init__(self, master: Any, text: str = "", *args: Any, converter: Callable[[str], T] = str, validator: Callable[[T], bool] = lambda _: True, **kwargs: Any) -> None:
         self._var = tk.StringVar(master, text)
         super().__init__(master, *args, textvariable=self._var, **kwargs)
+
+        self.converter = converter
+        self.validator = validator
+
+        self.hint_text = text
+        self.initial_fg = self.cget("foreground")
+        self.entered = False
+        self.config(foreground="grey")
+        self.bind("<FocusIn>", self.on_focus)
+        self.bind("<FocusOut>", self.on_unfocus)
 
     @property
     def text(self) -> str:
@@ -19,6 +29,36 @@ class CEntry(ttkb.Entry):
     @text.setter
     def text(self, text: str) -> None:
         self._var.set(text)
+
+    @property
+    def value(self) -> T:
+        return self.converter(self.text)
+
+    def validate(self) -> bool:
+        """Determine whether the input value is "valid", according to the entry's validator function."""
+        try:
+            return self.validator(self.value)
+        except Exception:
+            return False
+
+    def on_focus(self, _: tk.Event):
+        self.config(foreground=self.initial_fg)
+        if not self.entered:
+            # this is the first time the user has focused this textbox,
+            # so the hint text is what should still be in there
+            self.entered = True
+            self.text = ""
+
+    def on_unfocus(self, _: tk.Event):
+        if not self.text:
+            # user has left this textbox empty, so return to starting state
+            self.text = self.hint_text
+            self.entered = False
+            self.config(foreground="grey")
+
+        if not self.validate():
+            # resulting value is invalid
+            self.config(foreground="red")
 
 
 class CDropdown(ttkb.OptionMenu, Generic[T]):
