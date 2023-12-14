@@ -1,3 +1,4 @@
+from enum import Enum
 import tkinter as tk
 from tkinter.filedialog import askopenfilename
 import ttkbootstrap as ttkb  # type: ignore
@@ -5,6 +6,13 @@ from typing import Any, Callable, Generic, Iterable, TypeVar
 
 
 T = TypeVar("T")
+
+
+class TextAlignment(Enum):
+    LEFT = "left"
+    RIGHT = "right"
+    CENTRE = "center"
+    CENTER = "center"
 
 
 class CEntry(ttkb.Entry, Generic[T]):
@@ -78,7 +86,7 @@ class CDropdown(ttkb.OptionMenu, Generic[T]):
 
 
 class CCombobox(ttkb.Combobox, Generic[T]):
-    def __init__(self, master: Any, options: Iterable[T], mapfunc: Callable[[str], T] = str, **kwargs: Any):
+    def __init__(self, master: Any, options: Iterable[Any], mapfunc: Callable[[str], T] = str, **kwargs: Any):
         self._var = ttkb.StringVar(master)
         self.options = tuple(str(x) for x in options)
         self.mapfunc = mapfunc
