@@ -48,9 +48,5 @@ should display something like
 3. After cloning this repository, simply run
 
 ```sh
-$ python3 -m pip install \
-    attrs ttkbootstrap loguru pyyaml vosk pydub \
-    matplotlib ffmpeg tabulate[wide-chars] \
-    git+https://github.com/jianfch/stable-ts.git \
-    git+https://github.com/linto-ai/whisper-timestamped
+$ python3 -m pip install -r requirements.txt
 ```

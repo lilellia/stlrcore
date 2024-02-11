@@ -16,7 +16,17 @@ whisper_settings:
     #   base, large, large-v1, large-v2,
     #   tiny, small, medium,
     #   tiny.en, small.en, medium.en
-    model: base
+    model: small.en
+
+    # Voice Activity Detection (VAD)
+    # From the whisper-timestamped documentation:
+    # "whisper models can 'hallucinate' text when given a segment
+    # without speech. This can be avoided by running VAD and gluing
+    # speech segments together".
+    #
+    # should be one of:
+    #   true, silero:v3.1, auditok
+    vad: true
 
     # These values given per https://github.com/openai/whisper/discussions/435#discussion-4521080
     max_initial_timestamp: null
