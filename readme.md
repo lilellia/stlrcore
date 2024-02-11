@@ -49,7 +49,8 @@ should display something like
 
 ```sh
 $ python3 -m pip install \
-    attrs ttkbootstrap loguru pyyaml vosk pydub tabulate[wide-chars] \
+    attrs ttkbootstrap loguru pyyaml vosk pydub \
+    matplotlib ffmpeg tabulate[wide-chars] \
     git+https://github.com/jianfch/stable-ts.git \
     git+https://github.com/linto-ai/whisper-timestamped
 ```
