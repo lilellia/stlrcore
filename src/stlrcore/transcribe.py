@@ -9,8 +9,8 @@ from typing import Any, Iterable, Iterator, Literal
 from attrs import asdict, define
 from tabulate import tabulate
 
-from src.stlr.transcription_models import MODEL_CACHE
-from src.stlr.utils import seconds_to_hms, pairwise, diff_blocks
+import stlrcore.transcription_models
+from stlrcore.utils import seconds_to_hms, pairwise, diff_blocks
 
 DEFAULT_WHISPER_LIBRARY = "whisper-timestamped"
 DEFAULT_WHISPER_MODEL = "small.en"
@@ -133,7 +133,7 @@ class Transcription:
         device: str | None = None,
     ):
         """Create a transcription from an audio file using whisper."""
-        model = MODEL_CACHE.get(library, model_name, device)
+        model = stlrcore.transcription_models.MODEL_CACHE.get(library, model_name, device)
         return model.transcribe(audio_file)
 
     @property

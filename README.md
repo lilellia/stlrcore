@@ -1,8 +1,8 @@
-# stlr
+# stlr-core
 
 ## Overview
 
-`stlr` is a toolkit designed as a wrapper to [`whisper-timestamped`](https://github.com/linto-ai/whisper-timestamped) and [`stable-whisper`](https://github.com/jianfch/stable-ts) which aims to provide a more convenient interface between them. It serves as the foundation for `stlr-apps` (a suite of tools for automatic subtitle generation, etc.)
+`stlrcore` is a toolkit designed as a wrapper to [`whisper-timestamped`](https://github.com/linto-ai/whisper-timestamped) and [`stable-whisper`](https://github.com/jianfch/stable-ts) which aims to provide a more convenient interface between them. It serves as the foundation for `stlr-apps` (a suite of tools for automatic subtitle generation, etc.)
 
 ## Installation
 
@@ -12,8 +12,8 @@
 from pathlib import Path
 from typing import Iterator
 
-from stlr import Transcription
-from stlr.transcribe import WordTiming, Segment
+from stlrcore import Transcription
+from stlrcore.transcribe import WordTiming, Segment
 
 # create a transcription from an audio file
 transcription = Transcription.from_audio("path/to/audio.ext")

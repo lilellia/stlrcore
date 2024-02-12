@@ -6,7 +6,7 @@ from typing import Protocol, Any
 import stable_whisper
 import whisper_timestamped
 
-from src.stlr.transcribe import Transcription, WordTiming
+import stlrcore.transcribe
 
 
 class TranscriptionModel(Protocol):
@@ -18,7 +18,7 @@ class TranscriptionModel(Protocol):
         in_memory: bool = False,
     ): ...
 
-    def transcribe(self, audio_file: str | Path, **kwargs: Any) -> Transcription: ...
+    def transcribe(self, audio_file: str | Path, **kwargs: Any) -> stlrcore.transcribe.Transcription: ...
 
 
 class StableWhisper:
@@ -31,7 +31,7 @@ class StableWhisper:
     ):
         self.model = stable_whisper.load_model(name, device, download_root, in_memory)  # type: ignore
 
-    def transcribe(self, audio_file: str | Path, **kwargs: Any) -> Transcription:
+    def transcribe(self, audio_file: str | Path, **kwargs: Any) -> stlrcore.transcribe.Transcription:
         result = self.model.transcribe(str(audio_file), **kwargs)  # type: ignore
 
         original_word_timings = [
@@ -44,10 +44,10 @@ class StableWhisper:
 
         # convert to our own WordTiming format
         word_timings = [
-            WordTiming(word=x.word, start=x.start, end=x.end)
+            stlrcore.transcribe.WordTiming(word=x.word, start=x.start, end=x.end)
             for x in original_word_timings
         ]
-        return Transcription(word_timings)
+        return stlrcore.transcribe.Transcription(word_timings)
 
 
 class WhisperTimestamped:
@@ -60,14 +60,14 @@ class WhisperTimestamped:
     ):
         self.model = whisper_timestamped.load_model(name, device, download_root, in_memory)  # type: ignore
 
-    def transcribe(self, audio_file: str | Path, **kwargs: Any) -> Transcription:
+    def transcribe(self, audio_file: str | Path, **kwargs: Any) -> stlrcore.transcribe.Transcription:
         result = whisper_timestamped.transcribe(self.model, str(audio_file), **kwargs)  # type: ignore
 
-        word_timings: list[WordTiming] = []
+        word_timings: list[stlrcore.transcribe.WordTiming] = []
         for segment in result["segments"]:
             for word in segment["words"]:
                 # convert this dictionary to a WordTiming and append
-                timing = WordTiming(
+                timing = stlrcore.transcribe.WordTiming(
                     word=word["text"],
                     start=word["start"],
                     end=word["end"],
@@ -75,7 +75,7 @@ class WhisperTimestamped:
                 )
                 word_timings.append(timing)
 
-        return Transcription(word_timings)
+        return stlrcore.transcribe.Transcription(word_timings)
 
 
 class ModelCache:

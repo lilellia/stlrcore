@@ -1,12 +1,12 @@
 [project]
-name = "stlr"
+name = "stlrcore"
 version = "1.0.0"
 authors = [
     {name="Lily Ellington", email="pixielf.0@gmail.com"},
 ]
 description = "Create and process audio transcriptions with word timings"
 readme = "README.md"
-requires-python = "3.11"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -16,16 +16,12 @@ classifiers = [
 
 dependencies = [
     "attrs",
-    "python-dotenv",
-    "loguru",
-    "pyyaml",
     "pydub",
     "ffmpeg-python",
-    "git+https://github.com/jianfch/stable-ts.git",
-    "git+https://github.com/linto-ai/whisper-timestamped"
+    "stable-ts",
+    "whisper-timestamped",
+    "tabulate"
 ]
-
-
 
 [project.urls]
 Homepage = "https://github.com/lilellia/stlr"
