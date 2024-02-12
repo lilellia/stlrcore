@@ -1,20 +1,19 @@
-import os
-import platform
-import subprocess
+from __future__ import annotations
+
 from difflib import SequenceMatcher
 from itertools import count, tee
-import logging
 from pathlib import Path
 import re
-import tkinter as tk
 from typing import Callable, Iterable, Iterator, Sequence, TypeVar
-
-from stlr.ui import CText
 
 T = TypeVar("T")
 
 
-def diff_blocks(seq1: Sequence[T], seq2: Sequence[T], isjunk: Callable[[T], bool] | None = None, autojunk: bool = True) -> Iterator[tuple[Sequence[T], Sequence[T], Sequence[T]]]:
+def diff_blocks(
+        seq1: Sequence[T], seq2: Sequence[T],
+        isjunk: Callable[[T], bool] | None = None,
+        autojunk: bool = True
+) -> Iterator[tuple[Sequence[T], Sequence[T], Sequence[T]]]:
     """Step through the two sequences, returning matching/unmatching subsequences."""
     # initialise our pointers in seq1 (i) and seq2 (j)
     i, j = 0, 0
@@ -24,14 +23,17 @@ def diff_blocks(seq1: Sequence[T], seq2: Sequence[T], isjunk: Callable[[T], bool
         unmatched_b = seq2[j:block.b]  # read up to this match
         matched = seq1[block.a:block.a+block.size]  # take the matching part
 
-        yield (unmatched_a, unmatched_b, matched)
+        yield unmatched_a, unmatched_b, matched
 
         # and update our pointers to the end of this match
         i = block.a + block.size
         j = block.b + block.size
 
 
-def diff_block_str(str1: str, str2: str, *, case_sensitive: bool = False, remove_punctuation: bool = True) -> Iterator[tuple[str, str, str]]:
+def diff_block_str(
+        str1: str, str2: str, *,
+        case_sensitive: bool = False, remove_punctuation: bool = True
+) -> Iterator[tuple[str, str, str]]:
     def _transform(s: str, /) -> list[str]:
         if not case_sensitive:
             s = s.lower()
@@ -110,45 +112,3 @@ def seconds_to_hms(seconds: float, *, omit_hour: bool = True, srt_format: bool =
 
     # M:SS.SSS
     return f"{minutes:.0f}:{seconds:06.3f}"
-
-
-class CTextLogHandler(logging.Handler):
-    """A custom log handler designed to log to a CText object.
-
-    https://stackoverflow.com/a/41959785
-    """
-    def __init__(self, sink: CText):
-        logging.Handler.__init__(self)
-        self.sink = sink
-
-    def emit(self, record: logging.LogRecord) -> None:
-        message = self.format(record)
-
-        def append_to_log():
-            self.sink.configure(state="normal")
-            self.sink.write(message, end="\n")
-            self.sink.configure(state="disabled")
-            self.sink.yview(tk.END)
-
-        # required since we can't modify the sink from other threads
-        self.sink.after(ms=0, func=append_to_log)
-
-
-def open_file(path: Path) -> None:
-    """Instruct the operating system to open a file as if it were double-clicked from the file manager.
-    Behaviour is different based on operating system.
-
-    - Windows uses os.startfile
-    - MacOS uses "open $FILE"
-    - Linux uses "xdg-open $FILE"
-    """
-    system = platform.system()
-
-    if system == "Windows":
-        os.startfile(path)
-        return
-
-    # MacOS:    open $FILE
-    # Linux:    xdg-open $FILE
-    cmd = ("open" if system == "Darwin" else "xdg-open", path)
-    subprocess.run(cmd)
