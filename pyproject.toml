@@ -1,8 +1,8 @@
 [project]
 name = "stlrcore"
-version = "1.0.0"
+version = "1.0.1"
 authors = [
-    {name="Lily Ellington", email="pixielf.0@gmail.com"},
+    { name = "Lily Ellington", email = "pixielf.0@gmail.com" },
 ]
 description = "Create and process audio transcriptions with word timings"
 readme = "README.md"

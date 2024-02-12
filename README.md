@@ -2,7 +2,11 @@
 
 ## Overview
 
-`stlrcore` is a toolkit designed as a wrapper to [`whisper-timestamped`](https://github.com/linto-ai/whisper-timestamped) and [`stable-whisper`](https://github.com/jianfch/stable-ts) which aims to provide a more convenient interface between them. It serves as the foundation for `stlr-apps` (a suite of tools for automatic subtitle generation, etc.)
+`stlrcore` is a toolkit designed as a wrapper
+to [`whisper-timestamped`](https://github.com/linto-ai/whisper-timestamped)
+and [`stable-whisper`](https://github.com/jianfch/stable-ts) which aims to provide a more convenient interface between
+them. It serves as the foundation for [`stlrapps`](https://github.com/lilellia/stlrapps) (a suite of tools for automatic
+subtitle generation, etc.)
 
 ## Installation
 
@@ -32,7 +36,7 @@ segments: Iterator[Segment] = transcription.get_segments(tolerance=0.0)
 segment: Segment = transcription.get_fragment(fragment="...")
 
 # Transcriptions can be exported as json, Audacity cue, or Audition cue
-transcription.export(filestem="transcription", mode="json")      # -> transcription.json
+transcription.export(filestem="transcription", mode="json")  # -> transcription.json
 transcription.export(filestem="transcription", mode="audacity")  # -> transcription.txt
 transcription.export(filestem="transcription", mode="audition")  # -> transcription.csv
 
